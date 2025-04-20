@@ -20,7 +20,7 @@ public class DatabaseConnectorImpl implements IDatabaseConnector {
     /**
      * Constructs a DatabaseConnectorImpl with necessary connection details.
      *
-     * @param dbUrl      The JDBC URL for the database (e.g., "jdbc:mysql://localhost:3306/rels_db?useSSL=false&serverTimezone=UTC").
+     * @param dbUrl      The JDBC URL for the database
      * @param dbUser     The database username.
      * @param dbPassword The database password.
      */

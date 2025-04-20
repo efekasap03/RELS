@@ -115,3 +115,5 @@ GRANT SELECT ON relsdb.users TO 'landlord'@'%';
 -- Admin
 CREATE USER 'admin'@'%' IDENTIFIED BY 'adminpass';
 GRANT ALL PRIVILEGES ON relsdb.* TO 'admin'@'%';
+
+FLUSH PRIVILEGES;
