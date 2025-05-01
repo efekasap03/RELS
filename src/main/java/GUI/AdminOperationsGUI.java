@@ -5,6 +5,7 @@ import UserOperations.IAdminOperations;
 import com.rels.domain.Landlord;
 import com.rels.domain.Property;
 import com.rels.domain.Bid;
+import com.rels.domain.User;
 import com.rels.connector.DatabaseConnectorImpl;
 
 import javax.swing.*;
@@ -16,9 +17,14 @@ public class AdminOperationsGUI extends JFrame {
     private final IAdminOperations adminService;
 
     public AdminOperationsGUI() {
+        // 1) Veri tabanı bilgilerini ayarla:
+        String url      = "jdbc:postgresql://localhost:5432/yourdb";
+        String user     = "db_username";
+        String password = "db_password";
 
-        this.adminService = new AdminOperations(new DatabaseConnectorImpl());
-
+        // 2) Connector’ı doğru parametrelerle oluştur:
+        DatabaseConnectorImpl connector = new DatabaseConnectorImpl(url, user, password);
+        this.adminService = new AdminOperations(connector);
         setTitle("Admin Operations");
         setSize(600, 400);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
