@@ -17,6 +17,7 @@ public class UserOperations extends JFrame {
 
         JButton clientBtn = new JButton("Client");
         JButton landlordBtn = new JButton("Landlord");
+        JButton adminBtn = new JButton("Admin");
 
         clientBtn.addActionListener(e -> {
             new BidManagementGUI("Client", bidService).setVisible(true);
@@ -28,9 +29,15 @@ public class UserOperations extends JFrame {
             dispose();
         });
 
-        setLayout(new GridLayout(2, 1));
+        adminBtn.addActionListener(e -> {
+            new BidManagementGUI("Admin", bidService).setVisible(true);
+            dispose();
+        });
+
+        setLayout(new GridLayout(3, 1, 10, 10));
         add(clientBtn);
         add(landlordBtn);
+        add(adminBtn);
     }
 
     public static void main(String[] args) {

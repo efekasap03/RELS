@@ -86,8 +86,16 @@ public class BidManagementGUI extends JFrame {
             panel.add(listBtn);
             panel.add(removeBtn);
         }
+        if (userRole.equals("Admin")) {
+            JLabel label = new JLabel("Admin has no bid operations.");
+            label.setHorizontalAlignment(SwingConstants.CENTER);
+            getContentPane().add(label, BorderLayout.CENTER);
+            return; // Diğer GUI elemanlarını göstermeye gerek yok
+        }
+
 
         getContentPane().add(panel, BorderLayout.NORTH);
         getContentPane().add(scrollPane, BorderLayout.CENTER);
+
     }
 }
