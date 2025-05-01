@@ -54,4 +54,8 @@ public class Landlord extends User {
                 ", agentLicenseNumber='" + agentLicenseNumber + '\'' +
                 '}';
     }
+
+    public Object getUserId() {
+        return userId;
+    }
 }
