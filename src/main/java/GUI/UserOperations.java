@@ -2,6 +2,9 @@ package GUI;
 
 import UserOperations.BidManagement;
 import UserOperations.IBidManagement;
+import UserOperations.AdminOperations;
+import UserOperations.IAdminOperations;
+
 
 import javax.swing.*;
 import java.awt.*;
