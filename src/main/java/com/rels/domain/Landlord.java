@@ -58,4 +58,20 @@ public class Landlord extends User {
     public Object getUserId() {
         return userId;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }
