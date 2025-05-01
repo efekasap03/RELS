@@ -55,7 +55,7 @@ public class Landlord extends User {
                 '}';
     }
 
-    public Object getUserId() {
-        return userId;
-    }
+//    public Object getUserId() {
+//        return userId;
+//    }
 }
