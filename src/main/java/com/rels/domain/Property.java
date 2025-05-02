@@ -91,13 +91,12 @@ public class Property {
 
     @Override
     public String toString() {
-        return "Property{" +
-                "propertyId='" + propertyId + '\'' +
-                ", landlordId='" + landlordId + '\'' +
-                ", address='" + address + '\'' +
-                ", city='" + city + '\'' +
-                ", price=" + price +
-                ", isActive=" + isActive +
-                '}';
+        return "Property:" + '\n' +
+                "PropertyId = " + propertyId + '\n' +
+                "LandlordId = " + landlordId + '\n' +
+                "Address = " + address + '\n' +
+                "City = " + city + '\n' +
+                "Price = " + price +'\n' +
+                "isActive = " + isActive ;
     }
 }

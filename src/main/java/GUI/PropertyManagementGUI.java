@@ -132,7 +132,95 @@ public class PropertyManagementGUI extends JFrame {
     }
 
     private void showEditPropertyDialog(JTextArea output) {
-      
+            List<Property> properties = propertyService.getProperties();
+
+            if (properties.isEmpty()) {
+                output.setText("No properties available to edit.");
+                return;
+            }
+
+            // Create property selection dialog
+            String[] propertyOptions = properties.stream()
+                    .map(p -> p.getPropertyId() + " - " + p.getAddress() + ", " + p.getCity())
+                    .toArray(String[]::new);
+
+            String selectedProperty = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Select property to edit:",
+                    "Edit Property",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    propertyOptions,
+                    propertyOptions[0]);
+
+            if (selectedProperty == null) {
+                return; // User cancelled
+            }
+
+            // Extract property ID from selection
+            String propertyId = selectedProperty.split(" - ")[0];
+            Property property = properties.stream()
+                    .filter(p -> p.getPropertyId().equals(propertyId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (property == null) {
+                output.setText("Error: Property not found");
+                return;
+            }
+
+            // Create edit form with current values
+            JTextField addressField = new JTextField(property.getAddress());
+            JTextField cityField = new JTextField(property.getCity());
+            JTextField postalCodeField = new JTextField(property.getPostalCode());
+            JTextField typeField = new JTextField(property.getPropertyType());
+            JTextArea descriptionArea = new JTextArea(property.getDescription(), 3, 20);
+            JTextField priceField = new JTextField(property.getPrice().toString());
+            JTextField sqftField = new JTextField(property.getSquareFootage().toString());
+            JTextField bedroomsField = new JTextField(String.valueOf(property.getBedrooms()));
+            JTextField bathroomsField = new JTextField(String.valueOf(property.getBathrooms()));
+            JCheckBox activeCheckbox = new JCheckBox("Active", property.isActive());
+
+            Object[] inputs = {
+                    "Address:", addressField,
+                    "City:", cityField,
+                    "Postal Code:", postalCodeField,
+                    "Type:", typeField,
+                    "Description:", new JScrollPane(descriptionArea),
+                    "Price:", priceField,
+                    "Square Footage:", sqftField,
+                    "Bedrooms:", bedroomsField,
+                    "Bathrooms:", bathroomsField,
+                    "Status:", activeCheckbox
+            };
+
+            int result = JOptionPane.showConfirmDialog(
+                    this, inputs, "Edit Property", JOptionPane.OK_CANCEL_OPTION);
+
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    // Update property object with new values
+                    property.setAddress(addressField.getText().trim());
+                    property.setCity(cityField.getText().trim());
+                    property.setPostalCode(postalCodeField.getText().trim());
+                    property.setPropertyType(typeField.getText().trim());
+                    property.setDescription(descriptionArea.getText().trim());
+                    property.setPrice(new java.math.BigDecimal(priceField.getText().trim()));
+                    property.setSquareFootage(new java.math.BigDecimal(sqftField.getText().trim()));
+                    property.setBedrooms(Integer.parseInt(bedroomsField.getText().trim()));
+                    property.setBathrooms(Integer.parseInt(bathroomsField.getText().trim()));
+                    property.setActive(activeCheckbox.isSelected());
+
+                    // Save changes
+                    propertyService.editProperty(property);
+                    output.setText("Property updated successfully!\n" + '\n' + "Current Details: \n" +
+                            property.toString());
+                } catch (NumberFormatException e) {
+                    output.setText("Error: Invalid number format in one of the fields");
+                } catch (Exception e) {
+                    output.setText("Error: " + e.getMessage());
+                }
+            }
     }
 
     private void showDeactivatePropertyDialog(JTextArea output) {
