@@ -2,12 +2,8 @@ package GUI;
 
 import UserOperations.BidManagement;
 import UserOperations.IBidManagement;
-import UserOperations.AdminOperations;
-import UserOperations.IAdminOperations;
 
 import com.rels.connector.DatabaseConnectorImpl;
-import com.rels.repository.interfaces.IBidRepository;
-import com.rels.repository.impl.BidRepositoryImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,8 +18,7 @@ public class UserOperations extends JFrame {
                 "yourpassword"
         );
 
-        IBidRepository bidRepo = new BidRepositoryImpl(connector);
-        this.bidService = new BidManagement(bidRepo);
+        this.bidService = new BidManagement(connector);
 
         setTitle("User Role Selection");
         setSize(350, 250);

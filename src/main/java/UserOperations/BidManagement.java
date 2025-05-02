@@ -1,60 +1,120 @@
 package UserOperations;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
 import com.rels.domain.Bid;
 import java.math.BigDecimal;
-import com.rels.repository.interfaces.IBidRepository;
+import java.sql.*;
 import java.util.List;
 import java.util.UUID;
+import com.rels.connector.DatabaseConnectorImpl;
 
 public class BidManagement implements IBidManagement {
-    private final IBidRepository bidRepo;
+    private final DatabaseConnectorImpl dbConnector;
 
-    public BidManagement(IBidRepository bidRepo) {
-        this.bidRepo = bidRepo;
+    public BidManagement(DatabaseConnectorImpl dbConnector) {
+        this.dbConnector = dbConnector;
     }
     @Override
     public String createBid(String propertyId, String clientId, double amount) {
-        Bid bid = new Bid();
         String bidId = UUID.randomUUID().toString();
+        String sql = "INSERT INTO bids (bid_id, property_id, client_id, amount, status, bid_timestamp) " +
+                "VALUES (?, ?, ?, ?, 'PENDING', ?)";
 
-        bid.setBidId(bidId);
-        bid.setPropertyId(propertyId);
-        bid.setClientId(clientId);
-        bid.setAmount(BigDecimal.valueOf(amount));
-        bid.setStatus("PENDING");
-        bid.setBidTimestamp(LocalDateTime.now());
-        bid.setCreatedAt(LocalDateTime.now());
-        bid.setUpdatedAt(LocalDateTime.now());
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        bidRepo.save(bid);
-        return bidId;
+            pstmt.setString(1, bidId);
+            pstmt.setString(2, propertyId);
+            pstmt.setString(3, clientId);
+            pstmt.setBigDecimal(4, BigDecimal.valueOf(amount));
+            pstmt.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
 
+            pstmt.executeUpdate();
+            return bidId;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create bid", e);
+        }
     }
 
     @Override
     public boolean updateBid(String bidId, double newAmount) {
-        Bid bid = bidRepo.findById(bidId);
-        if (bid == null || !"PENDING".equalsIgnoreCase(bid.getStatus())) return false;
-        bid.setAmount(BigDecimal.valueOf(newAmount));
-        bid.setUpdatedAt(LocalDateTime.now());
-        return bidRepo.update(bid);
+        String sql = "UPDATE bids SET amount = ?, updated_at = CURRENT_TIMESTAMP " +
+                "WHERE bid_id = ? AND status = 'PENDING'";
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setBigDecimal(1, BigDecimal.valueOf(newAmount));
+            pstmt.setString(2, bidId);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update bid", e);
+        }
     }
 
-    @Override
+
+@Override
     public String getBidStatus(String bidId) {
-        Bid bid = bidRepo.findById(bidId);
-        return bid != null ? bid.getStatus() : null;
+
+    String sql = "SELECT status FROM bids WHERE bid_id = ?";
+
+    try (Connection conn = dbConnector.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, bidId);
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return rs.next() ? rs.getString("status") : null;
+        }
+    } catch (SQLException e) {
+        throw new RuntimeException("Failed to get bid status", e);
     }
+}
+
 
     @Override
     public List<String> listBidsByProperty(String propertyId) {
-        List<Bid> bids = bidRepo.findByPropertyId(propertyId);
+        String sql = "SELECT b.*, u.name as client_name FROM bids b " +
+                "JOIN users u ON b.client_id = u.user_id " +
+                "WHERE b.property_id = ? ORDER BY b.amount DESC";
         List<String> results = new ArrayList<>();
-        for (Bid b : bids) {
-            results.add(b.toString());
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, propertyId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String bidInfo = String.format(
+                            "Bid ID: %s | Client: %s | Amount: $%,.2f | Status: %s | Date: %s",
+                            rs.getString("bid_id"),
+                            rs.getString("client_name"),
+                            rs.getBigDecimal("amount"),
+                            rs.getString("status"),
+                            rs.getTimestamp("bid_timestamp")
+                    );
+                    results.add(bidInfo);
+                }
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to list bids by property", e);
         }
-        return results;
     }
+    private Bid mapResultSetToBid(ResultSet rs) throws SQLException {
+        Bid bid = new Bid();
+        bid.setBidId(rs.getString("bid_id"));
+        bid.setPropertyId(rs.getString("property_id"));
+        bid.setClientId(rs.getString("client_id"));
+        bid.setAmount(rs.getBigDecimal("amount"));
+        bid.setStatus(rs.getString("status"));
+        bid.setBidTimestamp(rs.getTimestamp("bid_timestamp").toLocalDateTime());
+        bid.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        bid.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        return bid;
+    }
+
+
 }
