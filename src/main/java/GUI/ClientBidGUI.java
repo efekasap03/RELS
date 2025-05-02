@@ -1,181 +1,158 @@
 package GUI;
-
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
-import UserOperations.PropertyManagement;
-import UserOperations.BidManagement;
 import com.rels.domain.Property;
-import com.rels.connector.DatabaseConnectorImpl;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.math.BigDecimal;
-import java.sql.*;
 import java.util.List;
 
 public class ClientBidGUI extends JFrame {
-    private final IBidManagement bidManagement;
-    private final IPropertyManagement propertyManagement;
-    private JList<Property> propertyList;
+    private final IBidManagement bidService;
+    private final IPropertyManagement propertyService;
+    private final String clientId;
 
-    public ClientBidGUI(IBidManagement bidManagement, IPropertyManagement propertyManagement) {
-        this.bidManagement = bidManagement;
-        this.propertyManagement = propertyManagement;
-        initComponents();
-    }
+    public ClientBidGUI(IBidManagement bidService, IPropertyManagement propertyService) {
+        this.bidService = bidService;
+        this.propertyService = propertyService;
+        this.clientId = "client1"; // This should come from login - hardcoded for example
 
-    private void initComponents() {
-        setTitle("Client - Create Bid");
-        setSize(700, 500);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setTitle("Client Bid Management");
+        setSize(800, 600);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        initializeUI();
+    }
 
+    private void initializeUI() {
+        // Main tabbed pane
+        JTabbedPane tabbedPane = new JTabbedPane();
 
-        JPanel clientInfoPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        // Tab 1: View Properties and Place Bids
+        JPanel viewPropertiesPanel = new JPanel(new BorderLayout(10, 10));
+        viewPropertiesPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JTextField clientIdField = new JTextField();
-        JTextField firstNameField = new JTextField();
-        JTextField lastNameField = new JTextField();
-        clientInfoPanel.add(new JLabel("Client ID:"));
-        clientInfoPanel.add(clientIdField);
-        clientInfoPanel.add(new JLabel("First Name:"));
-        clientInfoPanel.add(firstNameField);
-        clientInfoPanel.add(new JLabel("Last Name:"));
-        clientInfoPanel.add(lastNameField);
-
-        JPanel propertyPanel = new JPanel(new BorderLayout());
-        propertyPanel.setBorder(BorderFactory.createTitledBorder("Select Property"));
-
-
-        List<Property> activeProperties = propertyManagement.getProperties().stream()
-                .filter(Property::isActive)
-                .toList();
-
-        propertyList = new JList<>(activeProperties.toArray(new Property[0]));
-        propertyList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        propertyList.setCellRenderer(new PropertyListRenderer());
-
-        propertyPanel.add(new JScrollPane(propertyList), BorderLayout.CENTER);
-
-        JPanel propertyDetailsPanel = new JPanel(new BorderLayout());
-        propertyDetailsPanel.setBorder(BorderFactory.createTitledBorder("Property Details"));
-        JTextArea propertyDetailsArea = new JTextArea(6, 30);
-        propertyDetailsArea.setEditable(false);
-        propertyDetailsPanel.add(new JScrollPane(propertyDetailsArea), BorderLayout.CENTER);
-
-
-        propertyList.addListSelectionListener(e -> {
-            Property selected = propertyList.getSelectedValue();
-            if (selected != null) {
-                propertyDetailsArea.setText(formatPropertyDetails(selected));
-            }
-        });
-
-        JPanel bidPanel = new JPanel(new BorderLayout());
-        JTextField amountField = new JTextField();
-        bidPanel.setBorder(BorderFactory.createTitledBorder("Bid Information"));
-        bidPanel.add(new JLabel("Bid Amount:"), BorderLayout.WEST);
-        bidPanel.add(amountField, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        // Refresh button panel
+        JPanel refreshPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton refreshBtn = new JButton("Refresh Properties");
-        JButton submitBtn = new JButton("Create Bid");
-        JButton backBtn = new JButton("Back to Menu");
-        buttonPanel.add(submitBtn);
-        buttonPanel.add(backBtn);
-        buttonPanel.add(refreshBtn);
+        refreshPanel.add(refreshBtn);
 
-        JTextArea resultArea = new JTextArea();
-        resultArea.setEditable(false);
+        // Properties display area
+        JTextArea propertiesArea = new JTextArea();
+        propertiesArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(propertiesArea);
 
-        submitBtn.addActionListener((ActionEvent e) -> {
-            try {
-                String clientId = clientIdField.getText().trim();
-                String firstName = firstNameField.getText().trim();
-                String lastName = lastNameField.getText().trim();
-                Property selectedProperty = propertyList.getSelectedValue();
-                String propertyId = (String)((JLabel)propertyList.getCellRenderer())
-                        .getClientProperty("propertyId");
-                double amount = Double.parseDouble(amountField.getText().trim());
+        // Bid form panel
+        JPanel bidPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        bidPanel.setBorder(BorderFactory.createTitledBorder("Place New Bid"));
 
-                if (clientId.isEmpty() || firstName.isEmpty() || lastName.isEmpty()) {
-                    resultArea.setText("Please fill in all client fields.");
-                    return;
-                }
+        JTextField propertyIdField = new JTextField();
+        JTextField bidAmountField = new JTextField();
+        JButton placeBidBtn = new JButton("Place Bid");
 
-                if (selectedProperty == null) {
-                    resultArea.setText("Please select a property.");
-                    return;
-                }
+        bidPanel.add(new JLabel("Property ID:"));
+        bidPanel.add(propertyIdField);
+        bidPanel.add(new JLabel("Bid Amount:"));
+        bidPanel.add(bidAmountField);
+        bidPanel.add(new JLabel()); // Empty cell for spacing
+        bidPanel.add(placeBidBtn);
 
-                if (amount <= 0) {
-                    resultArea.setText("Bid amount must be positive.");
-                    return;
-                }
+        // Add components to view properties panel
+        viewPropertiesPanel.add(refreshPanel, BorderLayout.NORTH);
+        viewPropertiesPanel.add(scrollPane, BorderLayout.CENTER);
+        viewPropertiesPanel.add(bidPanel, BorderLayout.SOUTH);
 
-                String bidId = bidManagement.createBid(selectedProperty.getPropertyId(), clientId, amount);
-                resultArea.setText("Bid created!\nBid ID: " + bidId + "\nClient: " + firstName + " " + lastName);
-            } catch (NumberFormatException ex) {
-                resultArea.setText("Amount must be a valid number.");
-            }
-            catch (Exception ex) {
-                resultArea.setText("Error: " + ex.getMessage());
-            }
-        });
+        // Tab 2: Manage Existing Bids
+        JPanel manageBidsPanel = new JPanel(new BorderLayout(10, 10));
+        manageBidsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Refresh bids button panel
+        JPanel refreshBidsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton refreshBidsBtn = new JButton("Refresh My Bids");
+        refreshBidsPanel.add(refreshBidsBtn);
+
+        // Bids display area
+        JTextArea bidsArea = new JTextArea();
+        bidsArea.setEditable(false);
+        JScrollPane bidsScroll = new JScrollPane(bidsArea);
+
+        // Bid management form panel
+        JPanel bidManagementPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        bidManagementPanel.setBorder(BorderFactory.createTitledBorder("Manage Bids"));
+
+        JTextField bidIdField = new JTextField();
+        JTextField newAmountField = new JTextField();
+        JButton updateBtn = new JButton("Update Bid");
+        JButton checkStatusBtn = new JButton("Check Status");
+
+        bidManagementPanel.add(new JLabel("Bid ID:"));
+        bidManagementPanel.add(bidIdField);
+        bidManagementPanel.add(new JLabel("New Amount:"));
+        bidManagementPanel.add(newAmountField);
+        bidManagementPanel.add(updateBtn);
+        bidManagementPanel.add(checkStatusBtn);
+
+        // Add components to manage bids panel
+        manageBidsPanel.add(refreshBidsPanel, BorderLayout.NORTH);
+        manageBidsPanel.add(bidsScroll, BorderLayout.CENTER);
+        manageBidsPanel.add(bidManagementPanel, BorderLayout.SOUTH);
+
+        // Add tabs to tabbed pane
+        tabbedPane.addTab("Place New Bid", viewPropertiesPanel);
+        tabbedPane.addTab("Manage My Bids", manageBidsPanel);
+
+        // Add tabbed pane to frame
+        add(tabbedPane);
+
+        // Event handlers (EXACTLY the same as your second implementation)
         refreshBtn.addActionListener(e -> {
-            List<Property> refreshedProperties = propertyManagement.getProperties().stream()
-                    .filter(Property::isActive)
-                    .toList();
-            propertyList.setListData(refreshedProperties.toArray(new Property[0]));
-            resultArea.setText("Property list refreshed.");
+            List<Property> activeProperties = propertyService.getActiveProperties();
+            StringBuilder sb = new StringBuilder("Active Properties:\n\n");
+            activeProperties.forEach(p -> sb.append(p.toString()).append("\n\n"));
+            propertiesArea.setText(sb.toString());
         });
 
-
-        backBtn.addActionListener(e -> {
-            this.dispose();
-            new UserOperations().setVisible(true);
-        });
-        mainPanel.add(clientInfoPanel, BorderLayout.NORTH);
-
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(propertyPanel, BorderLayout.CENTER);
-        centerPanel.add(propertyDetailsPanel, BorderLayout.SOUTH);
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(bidPanel, BorderLayout.NORTH);
-        southPanel.add(buttonPanel, BorderLayout.CENTER);
-        southPanel.add(new JScrollPane(resultArea), BorderLayout.SOUTH);
-
-        mainPanel.add(southPanel, BorderLayout.SOUTH);
-
-        add(mainPanel);
-    }
-    private String formatPropertyDetails(Property property) {
-        return "ID: " + property.getPropertyId() + "\n" +
-                "Address: " + property.getAddress() + ", " + property.getCity() + "\n" +
-                "Type: " + property.getPropertyType() + " | Price: $" + property.getPrice() + "\n" +
-                "Bed/Bath: " + property.getBedrooms() + "/" + property.getBathrooms() + "\n" +
-                "SqFt: " + property.getSquareFootage() + "\n" +
-                "Description: " + property.getDescription();
-    }
-
-    // Custom renderer for Property objects in the JList
-    private static class PropertyListRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                      boolean isSelected, boolean cellHasFocus) {
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof Property) {
-                Property property = (Property) value;
-                setText(property.getAddress() + " - " + property.getCity() + " ($" + property.getPrice() + ")");
+        placeBidBtn.addActionListener(e -> {
+            try {
+                String propertyId = propertyIdField.getText().trim();
+                double amount = Double.parseDouble(bidAmountField.getText().trim());
+                String bidId = bidService.createBid(propertyId, clientId, amount);
+                JOptionPane.showMessageDialog(this, "Bid created with ID: " + bidId);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid amount format", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error creating bid: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
-            return this;
-        }
-    }
+        });
 
+        refreshBidsBtn.addActionListener(e -> {
+            List<String> bids = bidService.listBidsByClient(clientId);
+            bidsArea.setText(String.join("\n", bids));
+        });
+
+        updateBtn.addActionListener(e -> {
+            try {
+                String bidId = bidIdField.getText().trim();
+                double newAmount = Double.parseDouble(newAmountField.getText().trim());
+                boolean updated = bidService.updateBid(bidId, newAmount);
+                if (updated) {
+                    JOptionPane.showMessageDialog(this, "Bid updated successfully");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update bid",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid amount format",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        checkStatusBtn.addActionListener(e -> {
+            String bidId = bidIdField.getText().trim();
+            String status = bidService.getBidStatus(bidId);
+            JOptionPane.showMessageDialog(this, "Bid Status: " + status);
+        });
+    }
 }

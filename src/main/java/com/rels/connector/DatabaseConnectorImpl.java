@@ -51,6 +51,14 @@ public class DatabaseConnectorImpl implements IDatabaseConnector {
         return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
     }
 
+    public String getDbUrl() {
+        return dbUrl;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
     /**
      * {@inheritDoc}
      *

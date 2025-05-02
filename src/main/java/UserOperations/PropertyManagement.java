@@ -111,12 +111,19 @@ public class PropertyManagement implements UserOperations.IPropertyManagement {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
+            if (!conn.isValid(2)) { // Check if connection is valid
+                throw new SQLException("Database connection is invalid");
+            }
+
             while (rs.next()) {
                 Property property = mapResultSetToProperty(rs);
                 properties.add(property);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to fetch active properties", e);
+            System.err.println("SQL Error: " + e.getMessage());
+            System.err.println("SQL State: " + e.getSQLState());
+            System.err.println("Vendor Error: " + e.getErrorCode());
+            throw new RuntimeException("Failed to fetch active properties. Please check database connection.", e);
         }
         return properties;
     }

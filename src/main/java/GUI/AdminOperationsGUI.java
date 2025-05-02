@@ -5,7 +5,6 @@ import UserOperations.IAdminOperations;
 import com.rels.domain.Landlord;
 import com.rels.domain.Property;
 import com.rels.domain.Bid;
-import com.rels.domain.User;
 import com.rels.connector.DatabaseConnectorImpl;
 
 import javax.swing.*;
@@ -21,19 +20,19 @@ public class AdminOperationsGUI extends JFrame {
         String user     = "db_username";
         String password = "db_password";
 
-        // 2) Connector’ı doğru parametrelerle oluştur:
         DatabaseConnectorImpl connector = new DatabaseConnectorImpl(url, user, password);
         this.adminService = new AdminOperations(connector);
+
         setTitle("Admin Operations");
-        setSize(600, 400);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
         initComponents();
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
     }
 
     private void initComponents() {
         setLayout(new BorderLayout(10,10));
-
 
         JPanel buttonPanel = new JPanel(new GridLayout(5, 1, 5, 5));
         JButton addBtn    = new JButton("Add Landlord");
@@ -41,6 +40,7 @@ public class AdminOperationsGUI extends JFrame {
         JButton propsBtn  = new JButton("Monitor Properties");
         JButton bidsBtn   = new JButton("Monitor Bids");
         JButton reportBtn = new JButton("Generate Report");
+        JButton backBtn   = new JButton("Back");
 
         buttonPanel.add(addBtn);
         buttonPanel.add(editBtn);
@@ -48,36 +48,39 @@ public class AdminOperationsGUI extends JFrame {
         buttonPanel.add(bidsBtn);
         buttonPanel.add(reportBtn);
 
-
-        JTextArea outputArea = new JTextArea();
+        JTextArea outputArea = new JTextArea(20, 40);
         outputArea.setEditable(false);
         JScrollPane outputScroll = new JScrollPane(outputArea);
 
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(backBtn);
+
         add(buttonPanel, BorderLayout.WEST);
         add(outputScroll, BorderLayout.CENTER);
-
+        add(bottomPanel, BorderLayout.SOUTH);
 
         addBtn.addActionListener(e -> onAddLandlord(outputArea));
         editBtn.addActionListener(e -> onEditLandlord(outputArea));
         propsBtn.addActionListener(e -> {
             List<Property> props = adminService.monitorProperties();
             StringBuilder sb = new StringBuilder("Properties:\n");
-            props.forEach(p -> sb.append(p).append("\n"));
+            props.forEach(p -> sb.append(" - ").append(p).append("\n"));
             outputArea.setText(sb.toString());
         });
         bidsBtn.addActionListener(e -> {
             List<Bid> bids = adminService.monitorBids();
             StringBuilder sb = new StringBuilder("Bids:\n");
-            bids.forEach(b -> sb.append(b).append("\n"));
+            bids.forEach(b -> sb.append(" - ").append(b).append("\n"));
             outputArea.setText(sb.toString());
         });
-        //Issue4: when the report part is changed, this part will be fixed
-//        reportBtn.addActionListener(e -> {
-//            Report rpt = adminService.generateReports();
-//            outputArea.setText(rpt.toString());
-//        });
-
-        setVisible(true);
+        reportBtn.addActionListener(e -> {
+            // eskiden Report POJO’ydu, şimdi String dönüyor:
+            outputArea.setText(adminService.generateReports());
+        });
+        backBtn.addActionListener(e -> {
+            dispose();
+            new UserOperations().setVisible(true);
+        });
     }
 
     private void onAddLandlord(JTextArea output) {
@@ -95,13 +98,12 @@ public class AdminOperationsGUI extends JFrame {
         };
         int ok = JOptionPane.showConfirmDialog(this, inputs, "Add Landlord", JOptionPane.OK_CANCEL_OPTION);
         if (ok == JOptionPane.OK_OPTION) {
-            Landlord l = new Landlord();               // default ctor
+            Landlord l = new Landlord();
             l.setUserId(idField.getText().trim());
             l.setName(nameField.getText().trim());
             l.setEmail(emailField.getText().trim());
             l.setPasswordHash(pwdHashField.getText().trim());
             l.setAgentLicenseNumber(licenseField.getText().trim());
-            // role zaten Landlord() ctor’unda “LANDLORD” olarak ayarlanıyor
 
             boolean success = adminService.addLandlord(l);
             output.setText(success
