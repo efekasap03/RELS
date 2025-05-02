@@ -5,14 +5,26 @@ import UserOperations.IBidManagement;
 import UserOperations.AdminOperations;
 import UserOperations.IAdminOperations;
 
+import com.rels.connector.DatabaseConnectorImpl;
+import com.rels.repository.interfaces.IBidRepository;
+import com.rels.repository.impl.BidRepositoryImpl;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class UserOperations extends JFrame {
-    private final IBidManagement bidService = new BidManagement();
+    private final IBidManagement bidService;
 
     public UserOperations() {
+        DatabaseConnectorImpl connector = new DatabaseConnectorImpl(
+                "jdbc:mysql://localhost:3306/rels_db",
+                "root",
+                "yourpassword"
+        );
+
+        IBidRepository bidRepo = new BidRepositoryImpl(connector);
+        this.bidService = new BidManagement(bidRepo);
+
         setTitle("User Role Selection");
         setSize(350, 250);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
