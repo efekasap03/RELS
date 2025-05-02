@@ -2,7 +2,6 @@ package UserOperations;
 
 import com.rels.connector.DatabaseConnectorImpl;
 import com.rels.domain.Property;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

@@ -16,17 +16,28 @@ import java.sql.SQLException;
 
 public class UserOperations extends JFrame {
     private final IBidManagement bidService;
+<<<<<<< Updated upstream
     private final IPropertyManagement propertyManagement;
     private final DatabaseConnectorImpl connector;
 
     public UserOperations() {
         this.connector = new DatabaseConnectorImpl(
+=======
+    private final DatabaseConnectorImpl dbConnector;
+    public UserOperations() {
+        this.dbConnector = new DatabaseConnectorImpl(
+>>>>>>> Stashed changes
                 "jdbc:mysql://localhost:3306/relsdb",
                 "root",
                 "yourpassword");
 
+<<<<<<< Updated upstream
         this.bidService = new BidManagement(connector);
         this.propertyManagement = new PropertyManagement(connector);
+=======
+        IBidRepository bidRepo = new BidRepositoryImpl(dbConnector);
+        this.bidService = new BidManagement(bidRepo);
+>>>>>>> Stashed changes
 
         setTitle("User Role Selection");
         setSize(350, 250);
@@ -87,14 +98,31 @@ public class UserOperations extends JFrame {
     }
 
     private boolean isValidCredentials(String role, String username, String password) {
-        if (role.equals("Admin"))
-            return username.equals("admin") && password.equals("1234");
-        if (role.equals("Landlord"))
-            return username.equals("landlord") && password.equals("abcd");
-        return false;
+        String sql = "SELECT password_hash FROM users WHERE email = ? AND role = ?";
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Set parameters (convert role to uppercase to match enum in database)
+            pstmt.setString(1, username);
+            pstmt.setString(2, role.toUpperCase());
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    // For testing: Just compare plain text passwords
+                    String dbPassword = rs.getString("password_hash");
+                    return dbPassword.equals(password);
+                }
+                return false; // No user found with these credentials
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static void main(String[] args) {
+
         SwingUtilities.invokeLater(() -> new UserOperations().setVisible(true));
     }
 }
