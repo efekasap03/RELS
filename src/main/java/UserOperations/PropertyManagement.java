@@ -104,6 +104,24 @@ public class PropertyManagement implements UserOperations.IPropertyManagement {
         return properties;
     }
 
+    public List<Property> getActiveProperties() {
+        String sql = "SELECT * FROM properties WHERE is_active = TRUE";
+        List<Property> properties = new ArrayList<>();
+
+        try (Connection conn = dbConnector.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Property property = mapResultSetToProperty(rs);
+                properties.add(property);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to fetch active properties", e);
+        }
+        return properties;
+    }
+
 private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
         Property property = new Property();
         property.setPropertyId(rs.getString("property_id"));

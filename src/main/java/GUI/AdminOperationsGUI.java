@@ -17,8 +17,7 @@ public class AdminOperationsGUI extends JFrame {
     private final IAdminOperations adminService;
 
     public AdminOperationsGUI() {
-        // 1) Veri tabanı bilgilerini ayarla:
-        String url      = "jdbc:postgresql://localhost:5432/yourdb";
+        String url      = "jdbc:postgresql://localhost:5432/relsdb";
         String user     = "db_username";
         String password = "db_password";
 

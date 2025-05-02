@@ -7,5 +7,6 @@ public interface IPropertyManagement {
     void editProperty(Property property);
     void deactivateProperty(String propertyId);
     List<Property> getProperties();
+    List<Property> getActiveProperties();
 
 }

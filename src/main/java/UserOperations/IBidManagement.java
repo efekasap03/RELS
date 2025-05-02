@@ -7,4 +7,6 @@ public interface IBidManagement {
     boolean updateBid(String bidId, double newAmount);
     String getBidStatus(String bidId);
     List<String> listBidsByProperty(String propertyId);
+
+    List<String> listBidsByClient(String clientId);
 }

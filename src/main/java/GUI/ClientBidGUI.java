@@ -2,10 +2,16 @@ package GUI;
 
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
+import UserOperations.PropertyManagement;
+import UserOperations.BidManagement;
+import com.rels.domain.Property;
+import com.rels.connector.DatabaseConnectorImpl;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import com.rels.domain.Property;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.List;
 
 public class ClientBidGUI extends JFrame {
