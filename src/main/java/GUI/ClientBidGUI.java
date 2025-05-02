@@ -14,7 +14,6 @@ public class ClientBidGUI extends JFrame {
     private JList<Property> propertyList;
 
     public ClientBidGUI(IBidManagement bidManagement, IPropertyManagement propertyManagement) {
-
         this.bidManagement = bidManagement;
         this.propertyManagement = propertyManagement;
         initComponents();

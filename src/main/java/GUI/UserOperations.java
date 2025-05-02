@@ -2,23 +2,31 @@ package GUI;
 
 import UserOperations.BidManagement;
 import UserOperations.IBidManagement;
+import UserOperations.IPropertyManagement;
+import UserOperations.PropertyManagement;
 
 import com.rels.connector.DatabaseConnectorImpl;
 
 import javax.swing.*;
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class UserOperations extends JFrame {
     private final IBidManagement bidService;
+    private final IPropertyManagement propertyManagement;
+    private final DatabaseConnectorImpl connector;
 
     public UserOperations() {
-        DatabaseConnectorImpl connector = new DatabaseConnectorImpl(
-                "jdbc:mysql://localhost:3306/rels_db",
+        this.connector = new DatabaseConnectorImpl(
+                "jdbc:mysql://localhost:3306/relsdb",
                 "root",
-                "yourpassword"
-        );
+                "yourpassword");
 
         this.bidService = new BidManagement(connector);
+        this.propertyManagement = new PropertyManagement(connector);
 
         setTitle("User Role Selection");
         setSize(350, 250);
@@ -32,7 +40,7 @@ public class UserOperations extends JFrame {
         JButton adminBtn = new JButton("Admin");
 
         clientBtn.addActionListener(e -> {
-            new ClientBidGUI(bidService).setVisible(true);
+            new ClientBidGUI(bidService,propertyManagement).setVisible(true);
             dispose();
         });
 
