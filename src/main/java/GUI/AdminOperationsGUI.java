@@ -2,146 +2,296 @@ package GUI;
 
 import UserOperations.AdminOperations;
 import UserOperations.IAdminOperations;
+import UserOperations.IPropertyManagement;
+import UserOperations.IBidManagement;
 import com.rels.domain.Landlord;
 import com.rels.domain.Property;
 import com.rels.domain.Bid;
 import com.rels.connector.DatabaseConnectorImpl;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
 public class AdminOperationsGUI extends JFrame {
-
     private final IAdminOperations adminService;
+    private final IPropertyManagement propertyService;
 
-    public AdminOperationsGUI() {
-        String url      = "jdbc:postgresql://localhost:5432/relsdb";
-        String user     = "db_username";
-        String password = "db_password";
+    public AdminOperationsGUI(IBidManagement bidService, IPropertyManagement propertyService) {
+        String url = "jdbc:mysql://localhost:3306/relsdb";
+        String user = "admin";
+        String password = "adminpass";
 
-        DatabaseConnectorImpl connector = new DatabaseConnectorImpl(url, user, password);
-        this.adminService = new AdminOperations(connector);
+        DatabaseConnectorImpl dbConnector = new DatabaseConnectorImpl(url, user, password);
+        this.adminService = new AdminOperations(dbConnector);
+        this.propertyService = propertyService;
 
-        setTitle("Admin Operations");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
         initComponents();
-        pack();
-        setLocationRelativeTo(null);
-        setVisible(true);
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10,10));
+        setTitle("Admin Operations");
+        setSize(700, 500);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(5, 1, 5, 5));
-        JButton addBtn    = new JButton("Add Landlord");
-        JButton editBtn   = new JButton("Edit Landlord");
-        JButton propsBtn  = new JButton("Monitor Properties");
-        JButton bidsBtn   = new JButton("Monitor Bids");
-        JButton reportBtn = new JButton("Generate Report");
-        JButton backBtn   = new JButton("Back");
+        JTabbedPane tabbedPane = new JTabbedPane();
 
-        buttonPanel.add(addBtn);
-        buttonPanel.add(editBtn);
-        buttonPanel.add(propsBtn);
-        buttonPanel.add(bidsBtn);
-        buttonPanel.add(reportBtn);
+        // Landlord Management Tab
+        JPanel landlordPanel = createLandlordPanel();
+        tabbedPane.addTab("Landlord Management", landlordPanel);
 
-        JTextArea outputArea = new JTextArea(20, 40);
-        outputArea.setEditable(false);
-        JScrollPane outputScroll = new JScrollPane(outputArea);
+        // Property Monitoring Tab
+        JPanel propertyPanel = createPropertyPanel();
+        tabbedPane.addTab("Property Monitoring", propertyPanel);
+
+        // Bid Monitoring Tab
+        JPanel bidPanel = createBidPanel();
+        tabbedPane.addTab("Bid Monitoring", bidPanel);
+
+        // Reports Tab
+        JPanel reportPanel = createReportPanel();
+        tabbedPane.addTab("Reports", reportPanel);
+
+        // Logout Button
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.addActionListener(e -> {
+            new UserOperations().setVisible(true);
+            dispose();
+        });
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.add(backBtn);
+        bottomPanel.add(logoutBtn);
 
-        add(buttonPanel, BorderLayout.WEST);
-        add(outputScroll, BorderLayout.CENTER);
+        add(tabbedPane, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
-
-        addBtn.addActionListener(e -> onAddLandlord(outputArea));
-        editBtn.addActionListener(e -> onEditLandlord(outputArea));
-        propsBtn.addActionListener(e -> {
-            List<Property> props = adminService.monitorProperties();
-            StringBuilder sb = new StringBuilder("Properties:\n");
-            props.forEach(p -> sb.append(" - ").append(p).append("\n"));
-            outputArea.setText(sb.toString());
-        });
-        bidsBtn.addActionListener(e -> {
-            List<Bid> bids = adminService.monitorBids();
-            StringBuilder sb = new StringBuilder("Bids:\n");
-            bids.forEach(b -> sb.append(" - ").append(b).append("\n"));
-            outputArea.setText(sb.toString());
-        });
-        reportBtn.addActionListener(e -> {
-            // eskiden Report POJO’ydu, şimdi String dönüyor:
-            outputArea.setText(adminService.generateReports());
-        });
-        backBtn.addActionListener(e -> {
-            dispose();
-            new UserOperations().setVisible(true);
-        });
     }
 
-    private void onAddLandlord(JTextArea output) {
-        JTextField idField      = new JTextField();
-        JTextField nameField    = new JTextField();
-        JTextField emailField   = new JTextField();
-        JTextField pwdHashField = new JTextField();
+    private JPanel createLandlordPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+
+        JButton addLandlordBtn = new JButton("Add Landlord");
+        JButton editLandlordBtn = new JButton("Edit Landlord");
+        JButton viewLandlordsBtn = new JButton("View All Landlords");
+
+        addLandlordBtn.addActionListener(e -> showAddLandlordDialog(outputArea));
+        editLandlordBtn.addActionListener(e -> showEditLandlordDialog(outputArea));
+        viewLandlordsBtn.addActionListener(e -> {
+            List<Landlord> landlords = adminService.getAllLandlords();
+            outputArea.setText(formatLandlordsList(landlords));
+        });
+
+        buttonPanel.add(addLandlordBtn);
+        buttonPanel.add(editLandlordBtn);
+        buttonPanel.add(viewLandlordsBtn);
+
+        panel.add(buttonPanel, BorderLayout.WEST);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createPropertyPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+
+        JButton refreshBtn = new JButton("Refresh Properties");
+        refreshBtn.addActionListener(e -> {
+            List<Property> properties = adminService.monitorProperties();
+            outputArea.setText(formatPropertiesList(properties));
+        });
+
+        panel.add(refreshBtn, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createBidPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+
+        JButton refreshBtn = new JButton("Refresh Bids");
+        refreshBtn.addActionListener(e -> {
+            List<Bid> bids = adminService.monitorBids();
+            outputArea.setText(formatBidsList(bids));
+        });
+
+        panel.add(refreshBtn, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+
+        JButton generateBtn = new JButton("Generate Report");
+        generateBtn.addActionListener(e -> {
+            String report = adminService.generateReports();
+            outputArea.setText(report);
+        });
+
+        panel.add(generateBtn, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private void showAddLandlordDialog(JTextArea output) {
+        JTextField idField = new JTextField();
+        JTextField nameField = new JTextField();
+        JTextField emailField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
         JTextField licenseField = new JTextField();
+
         Object[] inputs = {
                 "Landlord ID:", idField,
                 "Name:", nameField,
                 "Email:", emailField,
-                "Password Hash:", pwdHashField,
-                "Agent License #:", licenseField
+                "Password:", passwordField,
+                "License Number:", licenseField
         };
-        int ok = JOptionPane.showConfirmDialog(this, inputs, "Add Landlord", JOptionPane.OK_CANCEL_OPTION);
-        if (ok == JOptionPane.OK_OPTION) {
-            Landlord l = new Landlord();
-            l.setUserId(idField.getText().trim());
-            l.setName(nameField.getText().trim());
-            l.setEmail(emailField.getText().trim());
-            l.setPasswordHash(pwdHashField.getText().trim());
-            l.setAgentLicenseNumber(licenseField.getText().trim());
 
-            boolean success = adminService.addLandlord(l);
-            output.setText(success
-                    ? "Landlord added: " + l.getUserId()
-                    : "Add failed");
+        int result = JOptionPane.showConfirmDialog(
+                this, inputs, "Add New Landlord", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                Landlord landlord = new Landlord();
+                landlord.setUserId(idField.getText().trim());
+                landlord.setName(nameField.getText().trim());
+                landlord.setEmail(emailField.getText().trim());
+                landlord.setPasswordHash(new String(passwordField.getPassword()));
+                landlord.setAgentLicenseNumber(licenseField.getText().trim());
+
+                boolean success = adminService.addLandlord(landlord);
+                if (success) {
+                    output.setText("Landlord added successfully!");
+                } else {
+                    output.setText("Failed to add landlord.");
+                }
+            } catch (Exception e) {
+                output.setText("Error: " + e.getMessage());
+            }
         }
     }
 
-    private void onEditLandlord(JTextArea output) {
-        JTextField idField      = new JTextField();
-        JTextField nameField    = new JTextField();
-        JTextField emailField   = new JTextField();
-        JTextField pwdHashField = new JTextField();
-        JTextField licenseField = new JTextField();
+    private void showEditLandlordDialog(JTextArea output) {
+        List<Landlord> landlords = adminService.getAllLandlords();
+        if (landlords.isEmpty()) {
+            output.setText("No landlords available to edit.");
+            return;
+        }
+
+        String[] landlordOptions = landlords.stream()
+                .map(l -> l.getUserId() + " - " + l.getName())
+                .toArray(String[]::new);
+
+        String selectedLandlord = (String) JOptionPane.showInputDialog(
+                this,
+                "Select landlord to edit:",
+                "Edit Landlord",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                landlordOptions,
+                landlordOptions[0]);
+
+        if (selectedLandlord == null) return;
+
+        String landlordId = selectedLandlord.split(" - ")[0];
+        Landlord landlord = landlords.stream()
+                .filter(l -> l.getUserId().equals(landlordId))
+                .findFirst()
+                .orElse(null);
+
+        if (landlord == null) {
+            output.setText("Error: Landlord not found");
+            return;
+        }
+
+        JTextField nameField = new JTextField(landlord.getName());
+        JTextField emailField = new JTextField(landlord.getEmail());
+        JPasswordField passwordField = new JPasswordField();
+        JTextField licenseField = new JTextField(landlord.getAgentLicenseNumber());
+
         Object[] inputs = {
-                "Landlord ID to edit:", idField,
-                "New Name:", nameField,
-                "New Email:", emailField,
-                "New Password Hash:", pwdHashField,
-                "New Agent License #:", licenseField
+                "Name:", nameField,
+                "Email:", emailField,
+                "Password (leave blank to keep current):", passwordField,
+                "License Number:", licenseField
         };
-        int ok = JOptionPane.showConfirmDialog(this, inputs, "Edit Landlord", JOptionPane.OK_CANCEL_OPTION);
-        if (ok == JOptionPane.OK_OPTION) {
-            Landlord l = new Landlord();
-            l.setUserId(idField.getText().trim());
-            l.setName(nameField.getText().trim());
-            l.setEmail(emailField.getText().trim());
-            l.setPasswordHash(pwdHashField.getText().trim());
-            l.setAgentLicenseNumber(licenseField.getText().trim());
 
-            boolean success = adminService.editLandlord(l);
-            output.setText(success
-                    ? "Landlord updated: " + l.getUserId()
-                    : "Edit failed");
+        int result = JOptionPane.showConfirmDialog(
+                this, inputs, "Edit Landlord", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                landlord.setName(nameField.getText().trim());
+                landlord.setEmail(emailField.getText().trim());
+                String newPassword = new String(passwordField.getPassword());
+                if (!newPassword.isEmpty()) {
+                    landlord.setPasswordHash(newPassword);
+                }
+                landlord.setAgentLicenseNumber(licenseField.getText().trim());
+
+                boolean success = adminService.editLandlord(landlord);
+                if (success) {
+                    output.setText("Landlord updated successfully!");
+                } else {
+                    output.setText("Failed to update landlord.");
+                }
+            } catch (Exception e) {
+                output.setText("Error: " + e.getMessage());
+            }
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(AdminOperationsGUI::new);
+    private String formatLandlordsList(List<Landlord> landlords) {
+        if (landlords.isEmpty()) return "No landlords found";
+
+        StringBuilder sb = new StringBuilder("All Landlords:\n\n");
+        for (Landlord l : landlords) {
+            sb.append("ID: ").append(l.getUserId()).append("\n");
+            sb.append("Name: ").append(l.getName()).append("\n");
+            sb.append("Email: ").append(l.getEmail()).append("\n");
+            sb.append("License: ").append(l.getAgentLicenseNumber()).append("\n\n");
+        }
+        return sb.toString();
+    }
+
+    private String formatPropertiesList(List<Property> properties) {
+        if (properties.isEmpty()) return "No properties found";
+
+        StringBuilder sb = new StringBuilder("All Properties:\n\n");
+        for (Property p : properties) {
+            sb.append("ID: ").append(p.getPropertyId()).append("\n");
+            sb.append("Address: ").append(p.getAddress()).append(", ").append(p.getCity()).append("\n");
+            sb.append("Type: ").append(p.getPropertyType()).append(" | Price: $").append(p.getPrice()).append("\n");
+            sb.append("Status: ").append(p.isActive() ? "Active" : "Inactive").append("\n\n");
+        }
+        return sb.toString();
+    }
+
+    private String formatBidsList(List<Bid> bids) {
+        if (bids.isEmpty()) return "No bids found";
+
+        StringBuilder sb = new StringBuilder("All Bids:\n\n");
+        for (Bid b : bids) {
+            sb.append("ID: ").append(b.getBidId()).append("\n");
+            sb.append("Property: ").append(b.getPropertyId()).append("\n");
+            sb.append("Client: ").append(b.getClientId()).append("\n");
+            sb.append("Amount: $").append(b.getAmount()).append("\n");
+            sb.append("Status: ").append(b.getStatus()).append("\n");
+            sb.append("Date: ").append(b.getBidTimestamp()).append("\n\n");
+        }
+        return sb.toString();
     }
 }
