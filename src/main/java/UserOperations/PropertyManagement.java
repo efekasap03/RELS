@@ -5,7 +5,8 @@ import com.rels.domain.Property;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-public class PropertyManagement implements UserOperations.IPropertyManagement {
+
+public class PropertyManagement implements IPropertyManagement {
     private final DatabaseConnectorImpl dbConnector;
 
     public PropertyManagement(DatabaseConnectorImpl dbConnector) {
@@ -41,12 +42,12 @@ public class PropertyManagement implements UserOperations.IPropertyManagement {
     }
 
     @Override
-    public void editProperty(Property property) {
+    public void editProperty(Property property, String landlordId) {
         String sql = "UPDATE properties SET " +
                 "address = ?, city = ?, postal_code = ?, property_type = ?, " +
                 "description = ?, price = ?, square_footage = ?, bedrooms = ?, " +
                 "bathrooms = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP " +
-                "WHERE property_id = ?";
+                "WHERE property_id = ? AND landlord_id = ?";  // Added landlord_id check
 
         try (Connection conn = dbConnector.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -62,25 +63,30 @@ public class PropertyManagement implements UserOperations.IPropertyManagement {
             pstmt.setInt(9, property.getBathrooms());
             pstmt.setBoolean(10, property.isActive());
             pstmt.setString(11, property.getPropertyId());
+            pstmt.setString(12, landlordId);
 
-            pstmt.executeUpdate();
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new RuntimeException("Property not Edited");
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update property", e);
         }
     }
 
     @Override
-    public void deactivateProperty(String propertyId) {
+    public void deactivateProperty(String propertyId, String landlordID) {
         String sql = "UPDATE properties SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP " +
-                "WHERE property_id = ?";
+                "WHERE property_id = ? AND landlord_id = ?";
 
         try (Connection conn = dbConnector.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, propertyId);
+            pstmt.setString(2, landlordID);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to deactivate property", e);
+            throw new RuntimeException("Failed to deactivate property as it was not found or does not belong to you", e);
         }
     }
 
@@ -128,7 +134,28 @@ public class PropertyManagement implements UserOperations.IPropertyManagement {
         return properties;
     }
 
-private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
+    @Override
+    public List<Property> getPropertiesByLandlord(String landlordId) {
+        String sql = "SELECT * FROM properties WHERE landlord_id = ?";
+        List<Property> properties = new ArrayList<>();
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, landlordId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Property property = mapResultSetToProperty(rs);
+                    properties.add(property);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to fetch properties by landlord", e);
+        }
+        return properties;
+    }
+
+        private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
         Property property = new Property();
         property.setPropertyId(rs.getString("property_id"));
         property.setLandlordId(rs.getString("landlord_id"));
@@ -144,6 +171,55 @@ private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
         property.setActive(rs.getBoolean("is_active"));
         property.setDateListed(rs.getTimestamp("date_listed"));
         return property;
+    }
+
+    @Override
+    public List<Property> searchProperties(String type, Double minPrice, Double maxPrice, String location) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM properties WHERE is_active = TRUE");
+
+        List<Object> params = new ArrayList<>();
+
+        if (type != null) {
+            sql.append(" AND property_type = ?");
+            params.add(type);
+        }
+        if (minPrice != null) {
+            sql.append(" AND price >= ?");
+            params.add(minPrice);
+        }
+        if (maxPrice != null) {
+            sql.append(" AND price <= ?");
+            params.add(maxPrice);
+        }
+        if (location != null && !location.isEmpty()) {
+            sql.append(" AND (city LIKE ? OR address LIKE ?)");
+            params.add("%" + location + "%");
+            params.add("%" + location + "%");
+        }
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof String) {
+                    pstmt.setString(i + 1, (String) param);
+                } else if (param instanceof Double) {
+                    pstmt.setDouble(i + 1, (Double) param);
+                }
+            }
+
+            List<Property> properties = new ArrayList<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    properties.add(mapResultSetToProperty(rs));
+                }
+            }
+            return properties;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to search properties", e);
+        }
     }
 }
 

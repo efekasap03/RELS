@@ -1,6 +1,8 @@
 package GUI;
 import UserOperations.IPropertyManagement;
+import UserOperations.IBidManagement;
 import UserOperations.PropertyManagement;
+import UserOperations.BidManagement;
 import com.rels.domain.Property;
 import com.rels.connector.DatabaseConnectorImpl;
 import javax.swing.*;
@@ -9,52 +11,49 @@ import java.util.List;
 
 public class PropertyManagementGUI extends JFrame {
     private final IPropertyManagement propertyService;
-    public PropertyManagementGUI() {
-        // Initialize database connection
+    private final IBidManagement bidservice;
+    private final String landlordId;
+
+    public PropertyManagementGUI(String landlordId) {
         String url = "jdbc:mysql://localhost:3306/relsdb";
         String user = "admin";
         String password = "adminpass";
 
         DatabaseConnectorImpl dbConnector = new DatabaseConnectorImpl(url, user, password);
         this.propertyService = new PropertyManagement(dbConnector);
+        this.bidservice = new BidManagement(dbConnector);
+        this.landlordId = landlordId;
 
         initComponents();
     }
 
     private void initComponents() {
         setTitle("Property Management");
-        setSize(500, 350);
+        setSize(700, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
-        JPanel buttonPanel = new JPanel(new GridLayout(5, 1, 5, 5));
+        JPanel buttonPanel = new JPanel(new GridLayout(4, 1, 5, 5));
         JTextArea outputArea = new JTextArea();
         outputArea.setEditable(false);
 
         JButton addBtn = new JButton("Add Property");
         JButton editBtn = new JButton("Edit Property");
         JButton deactivateBtn = new JButton("Deactivate Property");
-        JButton viewBtn = new JButton("View Active Properties");
-        JButton backBtn = new JButton("Log Out");
+        JButton viewBtn = new JButton("View my Properties");
 
         buttonPanel.add(addBtn);
         buttonPanel.add(editBtn);
         buttonPanel.add(deactivateBtn);
         buttonPanel.add(viewBtn);
-        buttonPanel.add(backBtn);
 
         addBtn.addActionListener(e -> showAddPropertyDialog(outputArea));
         editBtn.addActionListener(e -> showEditPropertyDialog(outputArea));
         deactivateBtn.addActionListener(e -> showDeactivatePropertyDialog(outputArea));
         viewBtn.addActionListener(e -> {
-            List<Property> properties = propertyService.getProperties();
+            List<Property> properties = propertyService.getPropertiesByLandlord(landlordId);
             outputArea.setText(formatPropertiesList(properties));
-        });
-
-        backBtn.addActionListener(e -> {
-            this.dispose();
-            new UserOperations().setVisible(true);
         });
 
         mainPanel.add(buttonPanel, BorderLayout.WEST);
@@ -132,14 +131,13 @@ public class PropertyManagementGUI extends JFrame {
     }
 
     private void showEditPropertyDialog(JTextArea output) {
-            List<Property> properties = propertyService.getProperties();
+            List<Property> properties = propertyService.getPropertiesByLandlord(landlordId);
 
             if (properties.isEmpty()) {
                 output.setText("No properties available to edit.");
                 return;
             }
 
-            // Create property selection dialog
             String[] propertyOptions = properties.stream()
                     .map(p -> p.getPropertyId() + " - " + p.getAddress() + ", " + p.getCity())
                     .toArray(String[]::new);
@@ -154,7 +152,7 @@ public class PropertyManagementGUI extends JFrame {
                     propertyOptions[0]);
 
             if (selectedProperty == null) {
-                return; // User cancelled
+                return;
             }
 
             // Extract property ID from selection
@@ -212,7 +210,7 @@ public class PropertyManagementGUI extends JFrame {
                     property.setActive(activeCheckbox.isSelected());
 
                     // Save changes
-                    propertyService.editProperty(property);
+                    propertyService.editProperty(property,landlordId);
                     output.setText("Property updated successfully!\n" + '\n' + "Current Details: \n" +
                             property.toString());
                 } catch (NumberFormatException e) {
@@ -227,7 +225,7 @@ public class PropertyManagementGUI extends JFrame {
         String propertyId = JOptionPane.showInputDialog(this, "Enter Property ID to deactivate:");
         if (propertyId != null && !propertyId.trim().isEmpty()) {
             try {
-                propertyService.deactivateProperty(propertyId.trim());
+                propertyService.deactivateProperty(propertyId.trim(), landlordId);
                 output.setText("Property deactivated: " + propertyId);
             } catch (Exception e) {
                 output.setText("Error: " + e.getMessage());
@@ -239,18 +237,21 @@ public class PropertyManagementGUI extends JFrame {
         if (properties == null || properties.isEmpty()) {
             return "No active properties found";
         }
-        StringBuilder sb = new StringBuilder("Active Properties:\n\n");
+
+        StringBuilder sb = new StringBuilder("ACTIVE PROPERTIES:\n\n");
         for (Property p : properties) {
             sb.append("ID: ").append(p.getPropertyId()).append("\n");
-            sb.append("Address: ").append(p.getAddress()).append(", ").append(p.getCity()).append(" ").append(p.getPostalCode()).append("\n");
-            sb.append("Type: ").append(p.getPropertyType()).append(" | Price: $").append(p.getPrice()).append("\n");
-            sb.append("Bed/Bath: ").append(p.getBedrooms()).append("/").append(p.getBathrooms()).append(" | SqFt: ").append(p.getSquareFootage()).append("\n");
+            sb.append("Address: ").append(p.getAddress()).append(", ").append(p.getCity())
+                    .append(" ").append(p.getPostalCode()).append("\n");
+            sb.append("Type: ").append(p.getPropertyType()).append(" | ");
+            sb.append("Price: $").append(p.getPrice()).append(" | ");
+            sb.append("Size: ").append(p.getSquareFootage()).append(" sq.ft.\n");
+            sb.append("Rooms: ").append(p.getBedrooms()).append(" bed | ");
+            sb.append(p.getBathrooms()).append(" bath\n");
+            sb.append("Status: ").append(p.isActive() ? "Active" : "Inactive").append(" | ");
+            sb.append("Listed: ").append(p.getDateListed()).append("\n");
             sb.append("Description: ").append(p.getDescription()).append("\n\n");
         }
         return sb.toString();
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new PropertyManagementGUI().setVisible(true));
     }
 }
