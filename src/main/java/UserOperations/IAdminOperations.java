@@ -11,6 +11,7 @@ public interface IAdminOperations {
     List<com.rels.domain.Property> monitorProperties();
     List<com.rels.domain.Bid> monitorBids();
     String generateReports();
+    public List<Landlord> getAllLandlords();
 
 }
 
