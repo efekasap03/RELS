@@ -1,4 +1,4 @@
-package com.rels.domain;
+package Data.domain;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

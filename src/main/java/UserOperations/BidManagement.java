@@ -1,7 +1,7 @@
 package UserOperations;
 
-import com.rels.domain.Bid;
-import com.rels.connector.DatabaseConnectorImpl;
+import Data.domain.Bid;
+import Data.connector.DatabaseConnectorImpl;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDateTime;

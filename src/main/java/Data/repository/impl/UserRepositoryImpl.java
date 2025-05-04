@@ -1,10 +1,10 @@
-package com.rels.repository.impl;
+package Data.repository.impl;
 
-import com.rels.connector.IDatabaseConnector;
-import com.rels.domain.Client;
-import com.rels.domain.Landlord;
-import com.rels.domain.User;
-import com.rels.repository.interfaces.IUserRepository;
+import Data.connector.IDatabaseConnector;
+import Data.domain.Client;
+import Data.domain.Landlord;
+import Data.domain.User;
+import Data.repository.interfaces.IUserRepository;
 
 import java.sql.*;
 import java.util.ArrayList;

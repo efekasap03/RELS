@@ -1,12 +1,10 @@
-package com.rels.domain;
+package Data.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Represents a Bid made by a Client on a Property.
- */
+
 public class Bid {
 
     private String bidId;
@@ -23,8 +21,6 @@ public class Bid {
     }
 
     // --- Getters and Setters ---
-    // (Generate standard getters and setters for all fields)
-
     public String getBidId() { return bidId; }
     public void setBidId(String bidId) { this.bidId = bidId; }
     public String getPropertyId() { return propertyId; }

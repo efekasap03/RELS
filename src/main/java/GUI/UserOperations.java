@@ -4,7 +4,7 @@ import UserOperations.BidManagement;
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
 import UserOperations.PropertyManagement;
-import com.rels.connector.DatabaseConnectorImpl;
+import Data.connector.DatabaseConnectorImpl;
 import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
