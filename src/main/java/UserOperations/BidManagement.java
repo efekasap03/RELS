@@ -1,7 +1,7 @@
 package UserOperations;
 
-import com.rels.domain.Bid;
-import com.rels.connector.DatabaseConnectorImpl;
+import Data.domain.Bid;
+import Data.connector.DatabaseConnectorImpl;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -165,7 +165,7 @@ public class BidManagement implements IBidManagement {
         return bids;
     }
 
-    @Override
+
     public boolean updateBidStatus(String bidId, String newStatus, String landlordId) {
         String sql = "UPDATE bids b " +
                 "JOIN properties p ON b.property_id = p.property_id " +
@@ -189,4 +189,3 @@ public class BidManagement implements IBidManagement {
         }
     }
 }
-

@@ -2,7 +2,7 @@ package GUI;
 
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
-import com.rels.domain.Bid;
+import Data.domain.Bid;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;

@@ -2,7 +2,7 @@ package GUI;
 
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
-import com.rels.domain.Property;
+import Data.domain.Property;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

@@ -1,12 +1,12 @@
 package UserOperations;
 
-import com.rels.domain.Landlord;
-import com.rels.domain.Property;
-import com.rels.domain.Bid;
-import com.rels.connector.DatabaseConnectorImpl;
+import Data.domain.Landlord;
+import Data.domain.Property;
+import Data.domain.Bid;
+import Data.connector.DatabaseConnectorImpl;
 
 import java.sql.*;
-import java.util.ArrayList;
+        import java.util.ArrayList;
 import java.util.List;
 
 public class AdminOperations implements IAdminOperations {

@@ -1,6 +1,6 @@
 package UserOperations;
 
-import com.rels.domain.Bid;
+import Data.domain.Bid;
 
 import java.util.List;
 

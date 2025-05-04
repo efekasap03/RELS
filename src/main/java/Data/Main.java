@@ -1,6 +1,6 @@
-package com.rels;
+package Data;
 
-import com.rels.connector.DatabaseConnectorImpl;
+import Data.connector.DatabaseConnectorImpl;
 import java.sql.Connection;
 import java.sql.SQLException;
 

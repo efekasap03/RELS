@@ -1,6 +1,6 @@
 package UserOperations;
 import java.util.List;
-import com.rels.domain.Property;
+import Data.domain.Property;
 
 public interface IPropertyManagement {
     void addProperty(Property property);

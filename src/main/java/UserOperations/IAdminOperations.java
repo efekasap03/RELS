@@ -1,17 +1,16 @@
 package UserOperations;
 
-import com.rels.domain.Landlord;
-import com.rels.domain.Property;
-import com.rels.domain.Bid;
+import Data.domain.Landlord;
+import Data.domain.Property;
+import Data.domain.Bid;
 import java.util.List;
 
 public interface IAdminOperations {
-    boolean addLandlord(com.rels.domain.Landlord landlord);
-    boolean editLandlord(com.rels.domain.Landlord landlord);
-    List<com.rels.domain.Property> monitorProperties();
-    List<com.rels.domain.Bid> monitorBids();
+    boolean addLandlord(Landlord landlord);
+    boolean editLandlord(Landlord landlord);
+    List<Property> monitorProperties();
+    List<Bid> monitorBids();
     String generateReports();
     public List<Landlord> getAllLandlords();
 
 }
-

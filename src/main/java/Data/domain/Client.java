@@ -1,4 +1,4 @@
-package com.rels.domain;
+package Data.domain;
 
 import java.util.Objects;
 

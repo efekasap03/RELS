@@ -1,6 +1,6 @@
-package com.rels.repository.interfaces;
+package Data.repository.interfaces;
 
-import com.rels.domain.Bid;
+import Data.domain.Bid;
 import java.util.List;
 
 public interface IBidRepository {

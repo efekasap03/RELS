@@ -1,4 +1,4 @@
-package com.rels.domain;
+package Data.domain;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -23,7 +23,6 @@ public class Filter {
     }
 
     // --- Getters and Setters ---
-    // (Generate standard getters and setters for all fields)
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
