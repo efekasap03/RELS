@@ -73,13 +73,20 @@ public class ClientBidGUI extends JFrame {
         JPanel searchPanel = createSearchPanel();
 
         // Bid form panel
-        JPanel bidPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        JPanel bidPanel = new JPanel(new GridLayout(6, 2, 10, 10));
         bidPanel.setBorder(new TitledBorder("Place New Bid"));
+
+        JTextField nameField = new JTextField();
+        JTextField surnameField = new JTextField();
         JTextField propertyIdField = new JTextField();
         JTextField bidAmountField = new JTextField();
         JButton placeBidBtn = new JButton("Place Bid");
         JButton backBtn = new JButton("Log Out");
 
+        bidPanel.add(new JLabel("First Name:"));
+        bidPanel.add(nameField);
+        bidPanel.add(new JLabel("Last Name:"));
+        bidPanel.add(surnameField);
         bidPanel.add(new JLabel("Property ID:"));
         bidPanel.add(propertyIdField);
         bidPanel.add(new JLabel("Bid Amount:"));
@@ -103,10 +110,29 @@ public class ClientBidGUI extends JFrame {
 
         placeBidBtn.addActionListener(e -> {
             try {
+                String name = nameField.getText().trim();
+                String surname = surnameField.getText().trim();
+
+                if (name.isEmpty() || surname.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Name and surname cannot be empty.",
+                            "Input Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 String propertyId = propertyIdField.getText().trim();
                 double amount = Double.parseDouble(bidAmountField.getText().trim());
+
                 String bidId = bidService.createBid(propertyId, clientId, amount);
-                JOptionPane.showMessageDialog(this, "Bid created with ID: " + bidId);
+
+                JOptionPane.showMessageDialog(this,
+                        String.format("Dear %s %s,\nYour bid has been successfully created with ID: %s",
+                                name, surname, bidId),
+                        "Bid Confirmation",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Reset fields
+                nameField.setText("");
+                surnameField.setText("");
                 propertyIdField.setText("");
                 bidAmountField.setText("");
                 refreshBidsTable();
@@ -124,6 +150,7 @@ public class ClientBidGUI extends JFrame {
 
         return panel;
     }
+
 
     private JPanel createManageBidsTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
