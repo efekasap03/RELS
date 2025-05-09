@@ -188,4 +188,37 @@ public class BidManagement implements IBidManagement {
             throw new RuntimeException("Failed to update bid status", e);
         }
     }
+
+    @Override
+    public String generateReports() {
+        String sql = "SELECT status, COUNT(*) AS count FROM bids GROUP BY status";
+        StringBuilder report = new StringBuilder();
+        int pending = 0, accepted = 0, rejected = 0;
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                String status = rs.getString("status");
+                int count = rs.getInt("count");
+
+                switch (status.toUpperCase()) {
+                    case "PENDING" -> pending = count;
+                    case "ACCEPTED" -> accepted = count;
+                    case "REJECTED" -> rejected = count;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to generate report", e);
+        }
+
+        report.append("Pending Bids: ").append(pending).append("\n")
+                .append("Accepted Bids: ").append(accepted).append("\n")
+                .append("Rejected Bids: ").append(rejected).append("\n");
+
+        return report.toString();
+    }
+
+
 }

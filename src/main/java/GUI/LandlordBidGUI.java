@@ -3,8 +3,15 @@ package GUI;
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
 import Data.domain.Bid;
+
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Destination;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.print.Printable;
+import java.awt.print.PrinterJob;
 import java.util.List;
 
 public class LandlordBidGUI extends JFrame {
@@ -37,6 +44,10 @@ public class LandlordBidGUI extends JFrame {
         // Tab 2: Bid Management
         JPanel bidPanel = createBidPanel();
         tabbedPane.addTab("Property Bids", bidPanel);
+
+        // Tab 3: Bid Reports
+        JPanel reportPanel = createReportPanel();
+        tabbedPane.addTab("Bid Reports", reportPanel);
 
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -162,6 +173,53 @@ public class LandlordBidGUI extends JFrame {
             return this;
         }
     }
+    private JPanel createReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+
+        JButton generateBtn = new JButton("Generate Report");
+
+        generateBtn.addActionListener(e -> {
+            String report = bidService.generateReports();
+            outputArea.setText(report);
+
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+
+                job.setPrintable((g, pageFormat, pageIndex) -> {
+                    if (pageIndex > 0) return Printable.NO_SUCH_PAGE;
+                    g.translate((int)pageFormat.getImageableX(), (int)pageFormat.getImageableY());
+                    outputArea.printAll(g);
+                    return Printable.PAGE_EXISTS;
+                });
+
+                PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+                for (PrintService svc : services) {
+                    if (svc.getName().toLowerCase().contains("pdf")) {
+                        job.setPrintService(svc);
+                        break;
+                    }
+                }
+
+                HashPrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+                attrs.add(new Destination(new java.io.File("bid_report.pdf").toURI()));
+
+                job.print(attrs);
+                JOptionPane.showMessageDialog(null, "PDF oluşturuldu: bid_report.pdf");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Yazdırma hatası: " + ex.getMessage(),
+                        "Hata", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        panel.add(generateBtn, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        return panel;
+    }
+
 
     private String formatBids(List<Bid> bids) {
         if (bids.isEmpty()) {

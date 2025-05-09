@@ -12,4 +12,6 @@ public interface IBidManagement {
     List<String> listBidsByClient(String clientId);
     List<Bid> getBidsByLandlord(String landlordId);
     boolean updateBidStatus(String bidId, String newStatus, String landlordId);
+
+    String generateReports();
 }
