@@ -10,12 +10,17 @@ import Data.domain.Bid;
 import Data.connector.DatabaseConnectorImpl;
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.awt.print.*;
 import javax.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.Destination;
 import javax.swing.*;
+
 
 
 public class AdminOperationsGUI extends JFrame {
@@ -140,13 +145,23 @@ public class AdminOperationsGUI extends JFrame {
         outputArea.setEditable(false);
 
         JButton generateBtn = new JButton("Generate Report");
+        JButton exportExcelBtn  = new JButton("Export to Excel");
+        JButton exportPdfBtn    = new JButton("Export to PDF");
 
         generateBtn.addActionListener(e -> {
             String report = adminService.generateReports();
             outputArea.setText(report);
+        });
+
+        exportPdfBtn.addActionListener(e -> {
+            String report = outputArea.getText().isBlank()
+                    ? adminService.generateReports()
+                    : outputArea.getText();
+            outputArea.setText(report);
 
             try {
                 PrinterJob job = PrinterJob.getPrinterJob();
+                job.setJobName("Report PDF Export");
 
                 job.setPrintable((g, pageFormat, pageIndex) -> {
                     if (pageIndex > 0) return Printable.NO_SUCH_PAGE;
@@ -175,9 +190,36 @@ public class AdminOperationsGUI extends JFrame {
             }
         });
 
-        panel.add(generateBtn, BorderLayout.NORTH);
-        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+        exportExcelBtn.addActionListener(e -> {
+            if (outputArea.getText().isBlank()) {
+                outputArea.setText(adminService.generateReports());
+            }
+            File file = new File("report.csv");
+            try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
 
+                for (String line : outputArea.getText().split("\\r?\\n")) {
+
+                    pw.println("\"" + line.replace("\"", "\"\"") + "\"");
+                }
+                pw.flush();
+                JOptionPane.showMessageDialog(panel,
+                        "CSV created:\n" + file.getAbsolutePath());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(panel,
+                        "CSV export error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+
+
+        JPanel top = new JPanel();
+        top.add(generateBtn);
+        top.add(exportExcelBtn);
+        top.add(exportPdfBtn);
+
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
         return panel;
     }
 
