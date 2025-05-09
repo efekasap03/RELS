@@ -189,35 +189,33 @@ public class BidManagement implements IBidManagement {
         }
     }
 
-    @Override
-    public String generateReports() {
-        String sql = "SELECT status, COUNT(*) AS count FROM bids GROUP BY status";
-        StringBuilder report = new StringBuilder();
-        int pending = 0, accepted = 0, rejected = 0;
 
+    public List<Bid> generateReports(String landlordId) {
+        String sql = "SELECT b.* FROM bids b " +
+                "JOIN properties p ON b.property_id = p.property_id " +
+                "WHERE p.landlord_id = ? ORDER BY b.bid_timestamp DESC";
+
+        List<Bid> bids = new ArrayList<>();
         try (Connection conn = dbConnector.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                String status = rs.getString("status");
-                int count = rs.getInt("count");
-
-                switch (status.toUpperCase()) {
-                    case "PENDING" -> pending = count;
-                    case "ACCEPTED" -> accepted = count;
-                    case "REJECTED" -> rejected = count;
+            pstmt.setString(1, landlordId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bid bid = new Bid();
+                    bid.setBidId(rs.getString("bid_id"));
+                    bid.setPropertyId(rs.getString("property_id"));
+                    bid.setClientId(rs.getString("client_id"));
+                    bid.setAmount(rs.getBigDecimal("amount"));
+                    bid.setStatus(rs.getString("status"));
+                    bid.setBidTimestamp(rs.getTimestamp("bid_timestamp").toLocalDateTime());
+                    bids.add(bid);
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to generate report", e);
+            throw new RuntimeException("Failed to generate bid report", e);
         }
-
-        report.append("Pending Bids: ").append(pending).append("\n")
-                .append("Accepted Bids: ").append(accepted).append("\n")
-                .append("Rejected Bids: ").append(rejected).append("\n");
-
-        return report.toString();
+        return bids;
     }
 
 

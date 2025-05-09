@@ -4,14 +4,9 @@ import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
 import Data.domain.Bid;
 
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import javax.print.attribute.standard.Destination;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.print.Printable;
-import java.awt.print.PrinterJob;
+import java.io.FileWriter;
 import java.util.List;
 
 public class LandlordBidGUI extends JFrame {
@@ -207,45 +202,50 @@ public class LandlordBidGUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         JTextArea outputArea = new JTextArea();
         outputArea.setEditable(false);
-
+        outputArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JButton generateBtn = new JButton("Generate Report");
 
-        generateBtn.addActionListener(e -> {
-            String report = bidService.generateReports();
-            outputArea.setText(report);
+        Runnable generateAndDisplayReport = () -> {
+            List<Bid> bids = bidService.generateReports(landlordId);
 
-            try {
-                PrinterJob job = PrinterJob.getPrinterJob();
+            StringBuilder display = new StringBuilder();
+            display.append(String.format("%-15s %-15s %-15s %-12s %-12s %-20s\n",
+                    "BID ID", "PROPERTY", "CLIENT", "AMOUNT", "STATUS", "DATE"));
+            display.append("------------------------------------------------------------------------------------------\n");
 
-                job.setPrintable((g, pageFormat, pageIndex) -> {
-                    if (pageIndex > 0) return Printable.NO_SUCH_PAGE;
-                    g.translate((int)pageFormat.getImageableX(), (int)pageFormat.getImageableY());
-                    outputArea.printAll(g);
-                    return Printable.PAGE_EXISTS;
-                });
+            try (FileWriter writer = new FileWriter("bid_report.csv")) {
+                writer.write("Bid ID,Property ID,Client ID,Amount,Status,Date\n");
 
-                PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
-                for (PrintService svc : services) {
-                    if (svc.getName().toLowerCase().contains("pdf")) {
-                        job.setPrintService(svc);
-                        break;
-                    }
+                for (Bid b : bids) {
+                    String csvLine = String.format("%s,%s,%s,%.2f,%s,%s\n",
+                            b.getBidId(), b.getPropertyId(), b.getClientId(),
+                            b.getAmount(), b.getStatus(), b.getBidTimestamp());
+                    writer.write(csvLine);
+
+                    display.append(String.format("%-15s %-15s %-15s $%-10.2f %-12s %-20s\n",
+                            b.getBidId(), b.getPropertyId(), b.getClientId(),
+                            b.getAmount(), b.getStatus(),
+                            b.getBidTimestamp().toString().substring(0, 16)));
                 }
 
-                HashPrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
-                attrs.add(new Destination(new java.io.File("bid_report.pdf").toURI()));
+                outputArea.setText(display.toString());
 
-                job.print(attrs);
-                JOptionPane.showMessageDialog(null, "PDF created: bid_report.pdf");
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(),
+                JOptionPane.showMessageDialog(null, "CSV Error: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
+        };
+
+        generateBtn.addActionListener(e -> {
+            generateAndDisplayReport.run();
+            JOptionPane.showMessageDialog(null, "CSV created: bid_report.csv");
         });
 
         panel.add(generateBtn, BorderLayout.NORTH);
         panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        SwingUtilities.invokeLater(generateAndDisplayReport);
 
         return panel;
     }
