@@ -1,8 +1,8 @@
+DROP DATABASE IF EXISTS relsdb;
+
 CREATE DATABASE relsdb DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE relsdb;
-
-
 -- ---
 -- Users Table (Handles User, Landlord, Client via Single Table Inheritance)
 -- ---
@@ -42,6 +42,7 @@ CREATE TABLE properties (
     bedrooms TINYINT UNSIGNED NULL DEFAULT 0,
     bathrooms TINYINT UNSIGNED NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,           -- Is the property currently listed/active?
+    is_sold BOOLEAN NOT NULL DEFAULT FALSE, 
     date_listed TIMESTAMP NULL,                        -- When the property was actively listed
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
