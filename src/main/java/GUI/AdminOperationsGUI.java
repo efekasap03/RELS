@@ -11,6 +11,12 @@ import Data.connector.DatabaseConnectorImpl;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import java.awt.print.*;
+import javax.print.*;
+import javax.print.attribute.*;
+import javax.print.attribute.standard.Destination;
+import javax.swing.*;
+
 
 public class AdminOperationsGUI extends JFrame {
     private final IAdminOperations adminService;
@@ -134,9 +140,39 @@ public class AdminOperationsGUI extends JFrame {
         outputArea.setEditable(false);
 
         JButton generateBtn = new JButton("Generate Report");
+
         generateBtn.addActionListener(e -> {
             String report = adminService.generateReports();
             outputArea.setText(report);
+
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+
+                job.setPrintable((g, pageFormat, pageIndex) -> {
+                    if (pageIndex > 0) return Printable.NO_SUCH_PAGE;
+                    g.translate((int)pageFormat.getImageableX(), (int)pageFormat.getImageableY());
+                    outputArea.printAll(g);
+                    return Printable.PAGE_EXISTS;
+                });
+
+                PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+                for (PrintService svc : services) {
+                    if (svc.getName().toLowerCase().contains("pdf")) {
+                        job.setPrintService(svc);
+                        break;
+                    }
+                }
+
+                HashPrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+                attrs.add(new Destination(new java.io.File("report.pdf").toURI()));
+
+                job.print(attrs);
+                JOptionPane.showMessageDialog(null, "PDF oluşturuldu: report.pdf");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Yazdırma hatası: " + ex.getMessage(),
+                        "Hata", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         panel.add(generateBtn, BorderLayout.NORTH);
