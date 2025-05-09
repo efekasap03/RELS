@@ -1,5 +1,6 @@
 package GUI;
 
+import Data.domain.Property;
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
 import Data.domain.Bid;
@@ -176,7 +177,7 @@ public class LandlordBidGUI extends JFrame {
         panel.add(controlPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        refreshBtn.doClick(); // Load on first display
+        refreshBtn.doClick();
 
         return panel;
     }

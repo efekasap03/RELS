@@ -178,6 +178,23 @@ public class PropertyManagementGUI extends JFrame {
             JTextField bedroomsField = new JTextField(String.valueOf(property.getBedrooms()));
             JTextField bathroomsField = new JTextField(String.valueOf(property.getBathrooms()));
             JCheckBox activeCheckbox = new JCheckBox("Active", property.isActive());
+            JCheckBox soldCheckbox = new JCheckBox("Sold", property.isSold());
+
+        // Disable Active checkbox if property is sold
+        soldCheckbox.addItemListener(e -> {
+            if (soldCheckbox.isSelected()) {
+                activeCheckbox.setSelected(false);
+                activeCheckbox.setEnabled(false);
+            } else {
+                activeCheckbox.setEnabled(true);
+            }
+        });
+
+        // Initialize based on current sold status
+        if (property.isSold()) {
+            activeCheckbox.setSelected(false);
+            activeCheckbox.setEnabled(false);
+        }
 
             Object[] inputs = {
                     "Address:", addressField,
@@ -189,7 +206,8 @@ public class PropertyManagementGUI extends JFrame {
                     "Square Footage:", sqftField,
                     "Bedrooms:", bedroomsField,
                     "Bathrooms:", bathroomsField,
-                    "Status:", activeCheckbox
+                    "Status:", activeCheckbox,
+                    "Sold:" , soldCheckbox
             };
 
             int result = JOptionPane.showConfirmDialog(
@@ -208,11 +226,15 @@ public class PropertyManagementGUI extends JFrame {
                     property.setBedrooms(Integer.parseInt(bedroomsField.getText().trim()));
                     property.setBathrooms(Integer.parseInt(bathroomsField.getText().trim()));
                     property.setActive(activeCheckbox.isSelected());
+                    property.setSold(soldCheckbox.isSelected());
 
                     // Save changes
-                    propertyService.editProperty(property,landlordId);
-                    output.setText("Property updated successfully!\n" + '\n' + "Current Details: \n" +
-                            property.toString());
+                    propertyService.editProperty(property, landlordId);
+                    output.setText("Property updated successfully!\n\nCurrent Details:\n" +
+                            "Address: " + property.getAddress() + "\n" +
+                            "Status: " + (property.isSold() ? "SOLD" :
+                            (property.isActive() ? "ACTIVE" : "INACTIVE")) + "\n" +
+                            "Last updated: " + new java.util.Date());
                 } catch (NumberFormatException e) {
                     output.setText("Error: Invalid number format in one of the fields");
                 } catch (Exception e) {
@@ -233,12 +255,14 @@ public class PropertyManagementGUI extends JFrame {
         }
     }
 
+
+
     private String formatPropertiesList(List<Property> properties) {
         if (properties == null || properties.isEmpty()) {
-            return "No active properties found";
+            return "No properties found";
         }
 
-        StringBuilder sb = new StringBuilder("ACTIVE PROPERTIES:\n\n");
+        StringBuilder sb = new StringBuilder("PROPERTIES:\n\n");
         for (Property p : properties) {
             sb.append("ID: ").append(p.getPropertyId()).append("\n");
             sb.append("Address: ").append(p.getAddress()).append(", ").append(p.getCity())
@@ -248,7 +272,15 @@ public class PropertyManagementGUI extends JFrame {
             sb.append("Size: ").append(p.getSquareFootage()).append(" sq.ft.\n");
             sb.append("Rooms: ").append(p.getBedrooms()).append(" bed | ");
             sb.append(p.getBathrooms()).append(" bath\n");
-            sb.append("Status: ").append(p.isActive() ? "Active" : "Inactive").append(" | ");
+
+            // Updated status display
+            String status;
+            if (p.isSold()) {
+                status = "SOLD";
+            } else {
+                status = p.isActive() ? "ACTIVE" : "INACTIVE";
+            }
+            sb.append("Status: ").append(status).append(" | ");
             sb.append("Listed: ").append(p.getDateListed()).append("\n");
             sb.append("Description: ").append(p.getDescription()).append("\n\n");
         }

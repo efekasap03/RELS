@@ -10,5 +10,6 @@ public interface IPropertyManagement {
     List<Property> getActiveProperties();
     List<Property> getPropertiesByLandlord(String landlordId);
     public List<Property> searchProperties(String type, Double minPrice, Double maxPrice, String location);
+    void markPropertyAsSold(String propertyId, String landlordID);
 
 }

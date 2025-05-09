@@ -218,5 +218,18 @@ public class BidManagement implements IBidManagement {
         return bids;
     }
 
+    public void rejectAllPendingBidsForProperty(String propertyId) {
+        String sql = "UPDATE bids SET status = 'REJECTED', updated_at = CURRENT_TIMESTAMP " +
+                "WHERE property_id = ? AND status = 'PENDING'";
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, propertyId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to reject pending bids", e);
+        }
+    }
+
 
 }

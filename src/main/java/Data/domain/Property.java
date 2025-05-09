@@ -21,6 +21,8 @@ public class Property {
     private Integer bedrooms; // Use Integer wrapper to allow null
     private Integer bathrooms; // Use Integer wrapper to allow null
     private boolean isActive;
+
+    private boolean isSold;
     private LocalDateTime dateListed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -71,6 +73,12 @@ public class Property {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
      public void setUpdatedAt(java.sql.Timestamp timestamp) {
         this.updatedAt = (timestamp != null) ? timestamp.toLocalDateTime() : null;
+    }
+    public boolean isSold() {
+        return isSold;
+    }
+    public void setSold(boolean sold) {
+        isSold = sold;
     }
 
 

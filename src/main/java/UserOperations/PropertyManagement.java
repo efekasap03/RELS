@@ -16,8 +16,8 @@ public class PropertyManagement implements IPropertyManagement {
     @Override
     public void addProperty(Property property) {
         String sql = "INSERT INTO properties (property_id, landlord_id, address, city, postal_code, " +
-                "property_type, description, price, square_footage, bedrooms, bathrooms, is_active) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "property_type, description, price, square_footage, bedrooms, bathrooms, is_active, is_sold) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dbConnector.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -34,6 +34,7 @@ public class PropertyManagement implements IPropertyManagement {
             pstmt.setInt(10, property.getBedrooms());
             pstmt.setInt(11, property.getBathrooms());
             pstmt.setBoolean(12, property.isActive());
+            pstmt.setBoolean(13, property.isSold());  // Add this line
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -46,8 +47,8 @@ public class PropertyManagement implements IPropertyManagement {
         String sql = "UPDATE properties SET " +
                 "address = ?, city = ?, postal_code = ?, property_type = ?, " +
                 "description = ?, price = ?, square_footage = ?, bedrooms = ?, " +
-                "bathrooms = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP " +
-                "WHERE property_id = ? AND landlord_id = ?";  // Added landlord_id check
+                "bathrooms = ?, is_active = ?, is_sold = ?, updated_at = CURRENT_TIMESTAMP " +
+                "WHERE property_id = ? AND landlord_id = ?";
 
         try (Connection conn = dbConnector.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -62,8 +63,9 @@ public class PropertyManagement implements IPropertyManagement {
             pstmt.setInt(8, property.getBedrooms());
             pstmt.setInt(9, property.getBathrooms());
             pstmt.setBoolean(10, property.isActive());
-            pstmt.setString(11, property.getPropertyId());
-            pstmt.setString(12, landlordId);
+            pstmt.setBoolean(11, property.isSold());  // Add this line
+            pstmt.setString(12, property.getPropertyId());
+            pstmt.setString(13, landlordId);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected == 0) {
@@ -91,8 +93,24 @@ public class PropertyManagement implements IPropertyManagement {
     }
 
     @Override
+    public void markPropertyAsSold(String propertyId, String landlordID) {
+        String sql = "UPDATE properties SET is_sold = TRUE, is_active = FALSE, updated_at = CURRENT_TIMESTAMP " +
+                "WHERE property_id = ? AND landlord_id = ?";
+
+        try (Connection conn = dbConnector.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, propertyId);
+            pstmt.setString(2, landlordID);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to mark property as sold", e);
+        }
+    }
+
+    @Override
     public List<Property> getProperties() {
-        String sql = "SELECT * FROM properties WHERE is_active = TRUE";
+        String sql = "SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE";
         List<Property> properties = new ArrayList<>();
 
         try (Connection conn = dbConnector.getConnection();
@@ -110,7 +128,7 @@ public class PropertyManagement implements IPropertyManagement {
     }
 
     public List<Property> getActiveProperties() {
-        String sql = "SELECT * FROM properties WHERE is_active = TRUE";
+        String sql = "SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE";
         List<Property> properties = new ArrayList<>();
 
         try (Connection conn = dbConnector.getConnection();
@@ -155,7 +173,7 @@ public class PropertyManagement implements IPropertyManagement {
         return properties;
     }
 
-        private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
+    private Property mapResultSetToProperty(ResultSet rs) throws SQLException {
         Property property = new Property();
         property.setPropertyId(rs.getString("property_id"));
         property.setLandlordId(rs.getString("landlord_id"));
@@ -169,6 +187,7 @@ public class PropertyManagement implements IPropertyManagement {
         property.setBedrooms(rs.getInt("bedrooms"));
         property.setBathrooms(rs.getInt("bathrooms"));
         property.setActive(rs.getBoolean("is_active"));
+        property.setSold(rs.getBoolean("is_sold"));  // Add this line
         property.setDateListed(rs.getTimestamp("date_listed"));
         return property;
     }
@@ -176,7 +195,7 @@ public class PropertyManagement implements IPropertyManagement {
     @Override
     public List<Property> searchProperties(String type, Double minPrice, Double maxPrice, String location) {
         StringBuilder sql = new StringBuilder(
-                "SELECT * FROM properties WHERE is_active = TRUE");
+                "SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE");
 
         List<Object> params = new ArrayList<>();
 
