@@ -1,0 +1,133 @@
+1. Verify that all available property listings are displayed on a dedicated page accessible to unauthenticated clients with filtering capabilities. 
+    All available properties are displayed by default. 
+    GUI Test: Page layout should remain intact, and elements should be properly aligned.
+    Filters correctly modify the results based on selected criteria. 
+    No error messages or performance issues occur when using filters.
+    1. Open the real estate listing page without logging in
+    2. Apply a filter (e.g., "Apartment" type)
+    3. Apply multiple filters (e.g., price range: $100,000 - $200,000, location: "İstanbul")
+    4. Reset filters
+    5.Try to access property listing as an unauthenticated client
+
+2. Verify that clients can view detailed property information, including all specified attributes.
+    - The detailed property page should display all attributes correctly. 
+    - Images should be displayed when available. 
+    - No missing information or formatting issues should occur.
+    1. Open the real estate listing page
+    2. Click on a property listing
+    3. Verify the displayed attributes (title, type, location, price, size, bedrooms/bathrooms, description, landlord contact information, listing date)
+    4. Check for property images (if available)
+    5. Try accessing multiple property details pages
+
+3. Verify that the RELS system provides a bidding interface for clients that captures bid amount and customer information.
+    The bidding interface is displayed and allows entry of bid amount and customer information; submitted bid details are stored correctly.
+    1. Open the bidding interface.
+    2. Enter bid amount and customer details.
+    3. Submit the bid.
+    4. Verify bid details in system logs.
+
+4. Verify that the RELS system provides submission confirmation via on-screen notification and email. 
+    A confirmation message is displayed on-screen, and a confirmation email is received.
+    1. Submit a bid.
+    2. Check on-screen confirmation.
+    3. Check registered email.
+
+5. Verify that the RELS system validates bid submissions to ensure proper numeric values and maintains bid timestamps.
+    Only valid numeric bids are accepted; invalid bids are rejected with appropriate error messages; timestamps are recorded accurately.
+    1. Open the bidding interface.
+    2. Enter a non-numeric bid amount.
+    3. Enter a valid numeric bid amount
+    4. Submit the bid
+    5. Check system logs
+
+6. Verify that the system sends an email notification to the client when their bid status changes (pending, accepted, or rejected).
+    The system successfully triggers an email notification when a bid status changes. The email must be sent within 5 minutes after the status update. The email content must include client’s information, the property details and the updated bid status. No duplicate or missing emails should occur.
+    1. Open the bidding interface.
+    2. Select a bid and change its status.
+    3. Check the system logs for email dispatch confirmation
+    4. Verify that the client receives the email
+    5. Open the email and check its content	
+
+7. Enable authenticated landlords to add new property listings with required minimum information and up to 25 images per listing.
+    Listing successfully added with all required fields (title, type, location, price, size, description) and up to 25 images.
+    1. Authenticate the landlord and log in.
+    2. Adds a new property listing with all required information and images more than 25 images per listing.
+    3. Adds a new property listing with all required information and images up to 25 images per listing.
+    4. Submit the property listing.
+    5. Verify if the listing is visible to unauthenticated clients.
+
+8. Allow landlords to edit existing property listings and mark them as "inactive" or "sold" without permanent deletion.
+    The property listing was modified without being deleted, and the status was marked.
+    1. Authenticate the landlord and log in
+    2. Edit an existing property listing and change its status to inactive or sold
+    3. Submit the changes
+
+9. Verify that the system sends a confirmation email to landlords when their property listing is successfully uploaded or edited.
+    The system successfully triggers an email when a property is uploaded or edited. The email must be sent within 5 minutes after the action.
+    The email content must include landlord’s information, property details, confirmation message for upload/update. No duplicate or missing emails should occur
+    1. Log in as a landlord and upload a new property listing or edit an existing one
+    2. Check system logs for email dispatch confirmation
+    3. Verify that the landlord receives the email
+    4. Open the email and check its content	
+
+10. Provide landlords an interface that allows them to sort, filter, and export (CSV) every bid on their properties.
+    Display sorted and filtered bids, CSV export functionality available
+    1. Authenticate the landlord and log in
+    2. View all bids on their properties
+    3. Apply filters and sort the bids
+    4. Export filtered bids to CSV format
+
+11. Check that clients get email updates regarding the status of their bids and that landlords have the authority to accept or reject bids.
+    The system informs the customer by email and changes the bid status when the landlord accepts or declines a bid.
+    1. The landlord accesses their user account.
+    2. The bid monitoring interface is accessed by the landlord.
+    3. The landlord clicks "Accept" or "Reject" after choosing a bid.
+    4. Check the system logs.
+    5. Check the email notification.
+
+12. Verify that administrators may alter profiles and add additional landlord accounts through the user management interface without changing passwords.
+    With the exception of passwords, administrators are able to add landlords and alter profiles.
+    1. The administrator accesses the user management interface. 
+    2. Admin inputs the new landlord's information.
+    3. The administrator creates a new landlord.
+    4. Admin attempts to change the landlord's password.
+
+13. Verify that administrators can generate and export reports on system usage, including active listings, bids placed, and user activity in both PDF and Excel formats.
+    Reports successfully generated with accurate data representation and properly formatted for both PDF and Excel outputs. All metrics specified in the requirement are included.
+    1. Administrator navigates to the reporting section in the admin dashboard.
+    2. Administrator selects report type, sets date range, and clicks "Generate Report".
+    3. Administrator selects PDF export format and clicks "Export".
+    4. Administrator selects Excel export format and clicks "Export".
+
+14. Ensure that authentication systems preserve session management, safely encrypt passwords, and offer password recovery.
+    1. The user inputs the correct credentials.
+    2. The user inputs credentials incorrectly.
+    3. The user asks for the recovery of their password.
+    4. Look for password storage in the database.
+    5. After logging in, examine the session behavior.
+
+15. Verify that the RELS system properly implements role-based access controls that restrict system functionality based on assigned user roles (client, landlord, administrator).
+    Users can only access functionality appropriate to their role (clients view/bid on properties; landlords manage properties/review bids; administrators manage all users/system functions).
+    1. Log in as client user.
+    2. While logged in as client, attempt to add property listings.
+    3. Log in as landlord user.
+    4. While logged in as landlord, attempt to access user management.
+    5. Log in as administrator user.
+    6. Verify admin can add landlords and manage all user accounts.
+    7. Attempt direct URL access to restricted functions for each role.
+
+16. Verify RELS meets performance requirements for page loading, bid processing, concurrent user support, and system uptime.
+    Property listing pages load within 3 seconds, bid processing completes within 2 seconds, system supports 1000 concurrent users without degradation, and achieves 95% uptime over a 30-day period.
+    1. Measure property listing page load time across multiple devices and network conditions.
+    2. Submit multiple bids and measure processing time.
+    3. Simulate 1000 concurrent users accessing the system.
+    4. Monitor system availability continuously for one week (168 hours).
+    5. Generate performance report comparing results against requirements.
+
+17. Verify RELS implements required security measures including HTTPS encryption and input validation to prevent injection attacks.
+    All data transmissions use HTTPS, and the system properly validates and sanitizes all user inputs to prevent injection attacks.
+    1. Verify all system URLs and data transmissions use HTTPS.
+    2. Attempt SQL injection attacks on all input fields.
+    3. Attempt XSS (Cross-Site Scripting) attacks via form submissions.
+    4. Inspect HTTP headers for proper security settings.
+    5. Verify form validation for all user inputs.

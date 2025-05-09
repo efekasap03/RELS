@@ -34,7 +34,7 @@ public class UserOperations extends JFrame {
         JButton landlordBtn = new JButton("Landlord");
         JButton adminBtn = new JButton("Admin");
 
-        clientBtn.addActionListener(e -> showLoginDialog("CLIENT"));
+        clientBtn.addActionListener(e -> showClientDialog());
 
         landlordBtn.addActionListener(e -> showLoginDialog("LANDLORD"));
 
@@ -49,6 +49,21 @@ public class UserOperations extends JFrame {
         add(label, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.CENTER);
     }
+
+    private void showClientDialog() {
+        String username = JOptionPane.showInputDialog(
+                this,
+                "Enter Client ID:",
+                "Client Login",
+                JOptionPane.PLAIN_MESSAGE
+        );
+        if (username != null && !username.trim().isEmpty()) {
+            new ClientBidGUI(bidService, propertyManagement, username.trim())
+                    .setVisible(true);
+            dispose();
+        }
+    }
+
 
     private void showLoginDialog(String role) {
         JTextField userField = new JTextField();
@@ -71,9 +86,7 @@ public class UserOperations extends JFrame {
                         new AdminOperationsGUI(bidService, propertyManagement).setVisible(true);
                     } else if (role.equals("LANDLORD")) {
                         new LandlordBidGUI(bidService, propertyManagement, username).setVisible(true);
-                    } else if (role.equals("CLIENT")) {
-                        new ClientBidGUI(bidService, propertyManagement, username).setVisible(true);
-                    }
+                    } 
                     dispose();
                 } else {
                     JOptionPane.showMessageDialog(this, "Invalid credentials or role mismatch.");

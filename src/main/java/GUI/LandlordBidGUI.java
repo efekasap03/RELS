@@ -3,8 +3,10 @@ package GUI;
 import UserOperations.IBidManagement;
 import UserOperations.IPropertyManagement;
 import Data.domain.Bid;
+
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileWriter;
 import java.util.List;
 
 public class LandlordBidGUI extends JFrame {
@@ -38,6 +40,10 @@ public class LandlordBidGUI extends JFrame {
         JPanel bidPanel = createBidPanel();
         tabbedPane.addTab("Property Bids", bidPanel);
 
+        // Tab 3: Bid Reports
+        JPanel reportPanel = createReportPanel();
+        tabbedPane.addTab("Bid Reports", reportPanel);
+
         add(tabbedPane, BorderLayout.CENTER);
 
         // Logout Button
@@ -68,49 +74,78 @@ public class LandlordBidGUI extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Refresh Button
-        JButton refreshBtn = new JButton("Refresh Bids");
+        // Filter Label
         gbc.gridx = 0;
         gbc.gridy = 0;
+        controlPanel.add(new JLabel("Filter Status:"), gbc);
+
+        JComboBox<String> filterStatusCombo = new JComboBox<>(new String[]{"ALL", "PENDING", "ACCEPTED", "REJECTED"});
+        gbc.gridx = 1;
+        controlPanel.add(filterStatusCombo, gbc);
+
+        // Sort Label
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        controlPanel.add(new JLabel("Sort By:"), gbc);
+
+        JComboBox<String> sortCombo = new JComboBox<>(new String[]{"Date ↑", "Date ↓", "Amount ↑", "Amount ↓"});
+        gbc.gridx = 1;
+        controlPanel.add(sortCombo, gbc);
+
+        // Refresh Button
+        JButton refreshBtn = new JButton("Apply");
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         gbc.gridwidth = 2;
         controlPanel.add(refreshBtn, gbc);
 
-        // Bid Selection Dropdown
-        JLabel bidLabel = new JLabel("Select Bid:");
-        gbc.gridx = 0;
-        gbc.gridy = 1;
+        // Bid Selection
+        gbc.gridy = 3;
         gbc.gridwidth = 1;
-        controlPanel.add(bidLabel, gbc);
+        controlPanel.add(new JLabel("Select Bid:"), gbc);
 
         JComboBox<Bid> bidCombo = new JComboBox<>();
         bidCombo.setRenderer(new BidListRenderer());
         gbc.gridx = 1;
-        gbc.gridy = 1;
         controlPanel.add(bidCombo, gbc);
 
-        // Status Selection
-        JLabel statusLabel = new JLabel("New Status:");
+        // Status Update
         gbc.gridx = 0;
-        gbc.gridy = 2;
-        controlPanel.add(statusLabel, gbc);
+        gbc.gridy = 4;
+        controlPanel.add(new JLabel("New Status:"), gbc);
 
         JComboBox<String> statusCombo = new JComboBox<>(new String[]{"PENDING", "ACCEPTED", "REJECTED"});
         gbc.gridx = 1;
-        gbc.gridy = 2;
         controlPanel.add(statusCombo, gbc);
 
         // Update Button
         JButton updateBtn = new JButton("Update Status");
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 5;
         gbc.gridwidth = 2;
         controlPanel.add(updateBtn, gbc);
 
-        // Action Listeners
+        // Refresh and filter logic
         refreshBtn.addActionListener(e -> {
             List<Bid> bids = bidService.getBidsByLandlord(landlordId);
-            bidArea.setText(formatBids(bids));
 
+            // Filter
+            String selectedStatus = (String) filterStatusCombo.getSelectedItem();
+            if (!"ALL".equals(selectedStatus)) {
+                bids.removeIf(bid -> !bid.getStatus().equalsIgnoreCase(selectedStatus));
+            }
+
+            // Sort
+            String sortBy = (String) sortCombo.getSelectedItem();
+            switch (sortBy) {
+                case "Date ↑" -> bids.sort((a, b) -> a.getBidTimestamp().compareTo(b.getBidTimestamp()));
+                case "Date ↓" -> bids.sort((a, b) -> b.getBidTimestamp().compareTo(a.getBidTimestamp()));
+                case "Amount ↑" -> bids.sort((a, b) -> a.getAmount().compareTo(b.getAmount()));
+                case "Amount ↓" -> bids.sort((a, b) -> b.getAmount().compareTo(a.getAmount()));
+            }
+
+            // Update UI
+            bidArea.setText(formatBids(bids));
             bidCombo.removeAllItems();
             bids.forEach(bidCombo::addItem);
         });
@@ -141,10 +176,11 @@ public class LandlordBidGUI extends JFrame {
         panel.add(controlPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        refreshBtn.doClick();
+        refreshBtn.doClick(); // Load on first display
 
         return panel;
     }
+
 
     private static class BidListRenderer extends DefaultListCellRenderer {
         @Override
@@ -162,6 +198,58 @@ public class LandlordBidGUI extends JFrame {
             return this;
         }
     }
+    private JPanel createReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextArea outputArea = new JTextArea();
+        outputArea.setEditable(false);
+        outputArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        JButton generateBtn = new JButton("Generate Report");
+
+        Runnable generateAndDisplayReport = () -> {
+            List<Bid> bids = bidService.generateReports(landlordId);
+
+            StringBuilder display = new StringBuilder();
+            display.append(String.format("%-15s %-15s %-15s %-12s %-12s %-20s\n",
+                    "BID ID", "PROPERTY", "CLIENT", "AMOUNT", "STATUS", "DATE"));
+            display.append("------------------------------------------------------------------------------------------\n");
+
+            try (FileWriter writer = new FileWriter("bid_report.csv")) {
+                writer.write("Bid ID,Property ID,Client ID,Amount,Status,Date\n");
+
+                for (Bid b : bids) {
+                    String csvLine = String.format("%s,%s,%s,%.2f,%s,%s\n",
+                            b.getBidId(), b.getPropertyId(), b.getClientId(),
+                            b.getAmount(), b.getStatus(), b.getBidTimestamp());
+                    writer.write(csvLine);
+
+                    display.append(String.format("%-15s %-15s %-15s $%-10.2f %-12s %-20s\n",
+                            b.getBidId(), b.getPropertyId(), b.getClientId(),
+                            b.getAmount(), b.getStatus(),
+                            b.getBidTimestamp().toString().substring(0, 16)));
+                }
+
+                outputArea.setText(display.toString());
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "CSV Error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        };
+
+        generateBtn.addActionListener(e -> {
+            generateAndDisplayReport.run();
+            JOptionPane.showMessageDialog(null, "CSV created: bid_report.csv");
+        });
+
+        panel.add(generateBtn, BorderLayout.NORTH);
+        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        SwingUtilities.invokeLater(generateAndDisplayReport);
+
+        return panel;
+    }
+
 
     private String formatBids(List<Bid> bids) {
         if (bids.isEmpty()) {
