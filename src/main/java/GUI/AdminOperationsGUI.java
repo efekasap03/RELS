@@ -167,11 +167,11 @@ public class AdminOperationsGUI extends JFrame {
                 attrs.add(new Destination(new java.io.File("report.pdf").toURI()));
 
                 job.print(attrs);
-                JOptionPane.showMessageDialog(null, "PDF oluşturuldu: report.pdf");
+                JOptionPane.showMessageDialog(null, "PDF created: report.pdf");
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(null, "Yazdırma hatası: " + ex.getMessage(),
-                        "Hata", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "ERROR: " + ex.getMessage(),
+                        "ERROR", JOptionPane.ERROR_MESSAGE);
             }
         });
 
