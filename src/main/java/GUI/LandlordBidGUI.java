@@ -79,49 +79,78 @@ public class LandlordBidGUI extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Refresh Button
-        JButton refreshBtn = new JButton("Refresh Bids");
+        // Filter Label
         gbc.gridx = 0;
         gbc.gridy = 0;
+        controlPanel.add(new JLabel("Filter Status:"), gbc);
+
+        JComboBox<String> filterStatusCombo = new JComboBox<>(new String[]{"ALL", "PENDING", "ACCEPTED", "REJECTED"});
+        gbc.gridx = 1;
+        controlPanel.add(filterStatusCombo, gbc);
+
+        // Sort Label
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        controlPanel.add(new JLabel("Sort By:"), gbc);
+
+        JComboBox<String> sortCombo = new JComboBox<>(new String[]{"Date ↑", "Date ↓", "Amount ↑", "Amount ↓"});
+        gbc.gridx = 1;
+        controlPanel.add(sortCombo, gbc);
+
+        // Refresh Button
+        JButton refreshBtn = new JButton("Apply");
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         gbc.gridwidth = 2;
         controlPanel.add(refreshBtn, gbc);
 
-        // Bid Selection Dropdown
-        JLabel bidLabel = new JLabel("Select Bid:");
-        gbc.gridx = 0;
-        gbc.gridy = 1;
+        // Bid Selection
+        gbc.gridy = 3;
         gbc.gridwidth = 1;
-        controlPanel.add(bidLabel, gbc);
+        controlPanel.add(new JLabel("Select Bid:"), gbc);
 
         JComboBox<Bid> bidCombo = new JComboBox<>();
         bidCombo.setRenderer(new BidListRenderer());
         gbc.gridx = 1;
-        gbc.gridy = 1;
         controlPanel.add(bidCombo, gbc);
 
-        // Status Selection
-        JLabel statusLabel = new JLabel("New Status:");
+        // Status Update
         gbc.gridx = 0;
-        gbc.gridy = 2;
-        controlPanel.add(statusLabel, gbc);
+        gbc.gridy = 4;
+        controlPanel.add(new JLabel("New Status:"), gbc);
 
         JComboBox<String> statusCombo = new JComboBox<>(new String[]{"PENDING", "ACCEPTED", "REJECTED"});
         gbc.gridx = 1;
-        gbc.gridy = 2;
         controlPanel.add(statusCombo, gbc);
 
         // Update Button
         JButton updateBtn = new JButton("Update Status");
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 5;
         gbc.gridwidth = 2;
         controlPanel.add(updateBtn, gbc);
 
-        // Action Listeners
+        // Refresh and filter logic
         refreshBtn.addActionListener(e -> {
             List<Bid> bids = bidService.getBidsByLandlord(landlordId);
-            bidArea.setText(formatBids(bids));
 
+            // Filter
+            String selectedStatus = (String) filterStatusCombo.getSelectedItem();
+            if (!"ALL".equals(selectedStatus)) {
+                bids.removeIf(bid -> !bid.getStatus().equalsIgnoreCase(selectedStatus));
+            }
+
+            // Sort
+            String sortBy = (String) sortCombo.getSelectedItem();
+            switch (sortBy) {
+                case "Date ↑" -> bids.sort((a, b) -> a.getBidTimestamp().compareTo(b.getBidTimestamp()));
+                case "Date ↓" -> bids.sort((a, b) -> b.getBidTimestamp().compareTo(a.getBidTimestamp()));
+                case "Amount ↑" -> bids.sort((a, b) -> a.getAmount().compareTo(b.getAmount()));
+                case "Amount ↓" -> bids.sort((a, b) -> b.getAmount().compareTo(a.getAmount()));
+            }
+
+            // Update UI
+            bidArea.setText(formatBids(bids));
             bidCombo.removeAllItems();
             bids.forEach(bidCombo::addItem);
         });
@@ -152,10 +181,11 @@ public class LandlordBidGUI extends JFrame {
         panel.add(controlPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        refreshBtn.doClick();
+        refreshBtn.doClick(); // Load on first display
 
         return panel;
     }
+
 
     private static class BidListRenderer extends DefaultListCellRenderer {
         @Override
@@ -206,11 +236,11 @@ public class LandlordBidGUI extends JFrame {
                 attrs.add(new Destination(new java.io.File("bid_report.pdf").toURI()));
 
                 job.print(attrs);
-                JOptionPane.showMessageDialog(null, "PDF oluşturuldu: bid_report.pdf");
+                JOptionPane.showMessageDialog(null, "PDF created: bid_report.pdf");
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(null, "Yazdırma hatası: " + ex.getMessage(),
-                        "Hata", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
