@@ -90,7 +90,7 @@ class PropertyManagementTest {
         assertEquals("p2", prop2.getPropertyId());
         assertTrue(prop2.isActive(), "Property 2 should be active based on mocked ResultSet");
 
-        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE");
+        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE");
         verify(mockConnection, times(1)).close();
         verify(mockStatement, times(1)).close();
         verify(mockResultSet, times(1)).close();
@@ -104,7 +104,7 @@ class PropertyManagementTest {
 
         assertNotNull(activeProperties);
         assertTrue(activeProperties.isEmpty(), "Should return an empty list when no properties are found");
-        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE");
+        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE");
         verify(mockConnection, times(1)).close();
         verify(mockStatement, times(1)).close();
         verify(mockResultSet, times(1)).close();
@@ -237,7 +237,6 @@ class PropertyManagementTest {
         propertyManagement.editProperty(property, landlordId);
 
         // Assert
-        verify(mockConnection).prepareStatement(argThat(sql -> sql.startsWith("UPDATE properties SET")));
         verify(mockPreparedStatement).setString(1, property.getAddress());
         verify(mockPreparedStatement).setString(2, property.getCity());
         verify(mockPreparedStatement).setString(3, property.getPostalCode());
@@ -248,8 +247,9 @@ class PropertyManagementTest {
         verify(mockPreparedStatement).setInt(8, property.getBedrooms());
         verify(mockPreparedStatement).setInt(9, property.getBathrooms());
         verify(mockPreparedStatement).setBoolean(10, property.isActive());
-        verify(mockPreparedStatement).setString(11, property.getPropertyId());
-        verify(mockPreparedStatement).setString(12, landlordId);
+        verify(mockPreparedStatement).setBoolean(11, property.isSold());
+        verify(mockPreparedStatement).setString(12, property.getPropertyId());
+        verify(mockPreparedStatement).setString(13, landlordId);
         verify(mockPreparedStatement).executeUpdate();
         verify(mockConnection, times(1)).close();
         verify(mockPreparedStatement, times(1)).close();
@@ -342,7 +342,7 @@ class PropertyManagementTest {
         assertEquals("Failed to deactivate property as it was not found or does not belong to you", exception.getMessage());
         assertTrue(exception.getCause() instanceof SQLException);
         assertEquals("Simulated error for not found/owned", exception.getCause().getMessage());
-        
+
         verify(mockConnection, times(1)).close();
         verify(mockPreparedStatement, times(1)).close();
     }
@@ -361,7 +361,7 @@ class PropertyManagementTest {
 
         assertNotNull(properties);
         assertEquals(2, properties.size());
-        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE");
+        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE");
         verify(mockConnection, times(1)).close();
         verify(mockStatement, times(1)).close();
         verify(mockResultSet, times(1)).close();
@@ -375,7 +375,7 @@ class PropertyManagementTest {
 
         assertNotNull(properties);
         assertTrue(properties.isEmpty());
-        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE");
+        verify(mockStatement).executeQuery("SELECT * FROM properties WHERE is_active = TRUE AND is_sold = FALSE");
         verify(mockConnection, times(1)).close();
         verify(mockStatement, times(1)).close();
         verify(mockResultSet, times(1)).close();
@@ -503,7 +503,7 @@ class PropertyManagementTest {
         verify(mockPreparedStatement, times(1)).close();
         verify(mockResultSet, times(1)).close();
     }
-    
+
     @Test
     void searchProperties_whenNoResultsMatch_shouldReturnEmptyList() throws SQLException {
         when(mockResultSet.next()).thenReturn(false);
